@@ -1,0 +1,27 @@
+import efl_animation_types;
+
+abstract Efl.Animation.Instance (Efl.Object)
+{
+   [[Efl animation instance abstract class]]
+   legacy_prefix: evas_object_animation_instance;
+   data: Evas_Object_Animation_Instance_Data;
+   methods {
+      start {
+         [[Start animation.]]
+         return: bool; [[$true on success, $false otherwise]]
+      }
+      cancel {
+         [[Cancel animation.]]
+         return: bool; [[$true on success, $false otherwise]]
+      }
+   }
+   implements {
+      Efl.Object.constructor;
+      Efl.Object.destructor;
+   }
+   events {
+      start; [[Animation is going to start.]]
+      animate; [[Animation is animated.]]
+      end; [[Animation ended]]
+   }
+}

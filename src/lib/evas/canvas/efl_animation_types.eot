@@ -1,2 +1,4 @@
 // ----------------------------------------------------------------------------
 // All the below types are for Efl Animation
+
+struct Efl.Animation.Instance.Animate_Event_Info; [[Information of animate event]]

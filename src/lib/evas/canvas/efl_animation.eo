@@ -33,9 +33,14 @@ abstract Efl.Animation (Efl.Object)
             duration: double; [[Duration value]]
          }
       }
+      instance_create {
+         [[Create instance of the animation.]]
+         return: Efl.Animation.Instance; [[Created instance of the animation]]
+      }
    }
    implements {
       Efl.Object.constructor;
       Efl.Object.destructor;
+      @empty .instance_create;
    }
 }

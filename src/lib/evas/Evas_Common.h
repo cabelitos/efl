@@ -3328,6 +3328,18 @@ typedef Eo Efl_Animation;
 
 #endif
 
+#ifndef _EFL_ANIMATION_INSTANCE_EO_CLASS_TYPE
+#define _EFL_ANIMATION_INSTANCE_EO_CLASS_TYPE
+
+typedef Eo Efl_Animation_Instance;
+
+#endif
+
+struct _Efl_Animation_Instance_Animate_Event_Info
+{
+   double progress;
+};
+
 /**
  * @}
  */
