@@ -1,0 +1,12 @@
+import efl_animation_types;
+
+class Efl.Animation.Instance.Translate (Efl.Animation.Instance)
+{
+   [[Efl translate animation instance class]]
+   legacy_prefix: evas_object_animation_instance;
+   data: Evas_Object_Animation_Instance_Translate_Data;
+   implements {
+      Efl.Object.constructor;
+      Efl.Object.destructor;
+   }
+}

@@ -115,6 +115,12 @@ EOAPI void efl_animation_instance_scale_get(const Eo *obj, double *from_scale_x,
 EOAPI void efl_animation_instance_scale_absolute_set(Eo *obj, double from_scale_x, double from_scale_y, double to_scale_x, double to_scale_y, int cx, int cy);
 EOAPI void efl_animation_instance_scale_absolute_get(const Eo *obj, double *from_scale_x, double *from_scale_y, double *to_scale_x, double *to_scale_y, int *cx, int *cy);
 
+EOAPI void efl_animation_instance_translate_set(Eo *obj, int from_x, int from_y, int to_x, int to_y);
+EOAPI void efl_animation_instance_translate_get(const Eo *obj, int *from_x, int *from_y, int *to_x, int *to_y);
+
+EOAPI void efl_animation_instance_translate_absolute_set(Eo *obj, int from_x, int from_y, int to_x, int to_y);
+EOAPI void efl_animation_instance_translate_absolute_get(const Eo *obj, int *from_x, int *from_y, int *to_x, int *to_y);
+
 #ifdef __cplusplus
 }
 #endif
