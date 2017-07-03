@@ -3349,6 +3349,13 @@ typedef Eo Efl_Animation_Scale;
 
 #endif
 
+#ifndef _EFL_ANIMATION_TRANSLATE_EO_CLASS_TYPE
+#define _EFL_ANIMATION_TRANSLATE_EO_CLASS_TYPE
+
+typedef Eo Efl_Animation_Translate;
+
+#endif
+
 #ifndef _EFL_ANIMATION_INSTANCE_EO_CLASS_TYPE
 #define _EFL_ANIMATION_INSTANCE_EO_CLASS_TYPE
 
