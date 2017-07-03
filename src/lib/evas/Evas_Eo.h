@@ -67,6 +67,7 @@
 #include "canvas/efl_canvas_object.eo.h"
 
 #include "canvas/efl_animation.eo.h"
+#include "canvas/efl_animation_alpha.eo.h"
 #include "canvas/efl_animation_instance.eo.h"
 #endif /* EFL_EO_API_SUPPORT */
 
