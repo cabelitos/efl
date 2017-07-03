@@ -109,6 +109,12 @@ EOAPI void efl_animation_instance_rotate_get(const Eo *obj, double *from_degree,
 EOAPI void efl_animation_instance_rotate_absolute_set(Eo *obj, double from_degree, double to_degree, int cx, int cy);
 EOAPI void efl_animation_instance_rotate_absolute_get(const Eo *obj, double *from_degree, double *to_degree, int *cx, int *cy);
 
+EOAPI void efl_animation_instance_scale_set(Eo *obj, double from_scale_x, double from_scale_y, double to_scale_x, double to_scale_y, Efl_Canvas_Object *pivot, double cx, double cy);
+EOAPI void efl_animation_instance_scale_get(const Eo *obj, double *from_scale_x, double *from_scale_y, double *to_scale_x, double *to_scale_y, Efl_Canvas_Object **pivot, double *cx, double *cy);
+
+EOAPI void efl_animation_instance_scale_absolute_set(Eo *obj, double from_scale_x, double from_scale_y, double to_scale_x, double to_scale_y, int cx, int cy);
+EOAPI void efl_animation_instance_scale_absolute_get(const Eo *obj, double *from_scale_x, double *from_scale_y, double *to_scale_x, double *to_scale_y, int *cx, int *cy);
+
 #ifdef __cplusplus
 }
 #endif
