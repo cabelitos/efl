@@ -109,6 +109,7 @@ typedef struct _Evas_Filter_Command         Evas_Filter_Command;
 typedef enum _Evas_Filter_Support           Evas_Filter_Support;
 
 typedef struct _Evas_Object_Animation_Alpha_Data                      Evas_Object_Animation_Alpha_Data;
+typedef struct _Evas_Object_Animation_Rotate_Data                     Evas_Object_Animation_Rotate_Data;
 typedef struct _Evas_Object_Animation_Data                            Evas_Object_Animation_Data;
 typedef struct _Evas_Object_Animation_Instance_Alpha_Data             Evas_Object_Animation_Instance_Alpha_Data;
 typedef struct _Evas_Object_Animation_Instance_Data                   Evas_Object_Animation_Instance_Data;
