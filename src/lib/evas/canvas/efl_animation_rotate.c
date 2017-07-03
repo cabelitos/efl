@@ -220,6 +220,45 @@ _efl_animation_rotate_rotate_absolute_get(Eo *eo_obj,
      *cy = pd->abs_pivot.cy;
 }
 
+EOLIAN static Efl_Animation_Instance *
+_efl_animation_rotate_efl_animation_instance_create(Eo *eo_obj,
+                                                    Evas_Object_Animation_Rotate_Data *pd)
+{
+   EFL_ANIMATION_ROTATE_CHECK_OR_RETURN(eo_obj, NULL);
+
+   Efl_Animation_Instance_Rotate *instance
+      = efl_add(EFL_ANIMATION_INSTANCE_ROTATE_CLASS, NULL);
+
+   Efl_Canvas_Object *target = efl_animation_target_get(eo_obj);
+   efl_animation_instance_target_set(instance, target);
+
+   Eina_Bool state_keep = efl_animation_final_state_keep_get(eo_obj);
+   efl_animation_instance_final_state_keep_set(instance, state_keep);
+
+   double duration = efl_animation_duration_get(eo_obj);
+   efl_animation_instance_duration_set(instance, duration);
+
+   if (pd->use_rel_pivot)
+     {
+        efl_animation_instance_rotate_set(instance,
+                                          pd->from.degree,
+                                          pd->to.degree,
+                                          pd->rel_pivot.obj,
+                                          pd->rel_pivot.cx,
+                                          pd->rel_pivot.cy);
+     }
+   else
+     {
+        efl_animation_instance_rotate_absolute_set(instance,
+                                                   pd->from.degree,
+                                                   pd->to.degree,
+                                                   pd->abs_pivot.cx,
+                                                   pd->abs_pivot.cy);
+     }
+
+   return instance;
+}
+
 EOLIAN static Efl_Object *
 _efl_animation_rotate_efl_object_constructor(Eo *eo_obj,
                                              Evas_Object_Animation_Rotate_Data *pd)

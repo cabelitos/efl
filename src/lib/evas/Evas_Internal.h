@@ -103,6 +103,12 @@ EOAPI void efl_animation_instance_final_state_show(Eo *obj);
 
 EOAPI void efl_animation_instance_alpha_set(Eo *obj, double from_alpha, double to_alpha);
 
+EOAPI void efl_animation_instance_rotate_set(Eo *obj, double from_degree, double to_degree, Efl_Canvas_Object *pivot, double cx, double cy);
+EOAPI void efl_animation_instance_rotate_get(const Eo *obj, double *from_degree, double *to_degree, Efl_Canvas_Object **pivot, double *cx, double *cy);
+
+EOAPI void efl_animation_instance_rotate_absolute_set(Eo *obj, double from_degree, double to_degree, int cx, int cy);
+EOAPI void efl_animation_instance_rotate_absolute_get(const Eo *obj, double *from_degree, double *to_degree, int *cx, int *cy);
+
 #ifdef __cplusplus
 }
 #endif

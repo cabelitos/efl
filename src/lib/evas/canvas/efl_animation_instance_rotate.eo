@@ -1,0 +1,12 @@
+import efl_animation_types;
+
+class Efl.Animation.Instance.Rotate (Efl.Animation.Instance)
+{
+   [[Efl rotate animation instance class]]
+   legacy_prefix: evas_object_animation_instance;
+   data: Evas_Object_Animation_Instance_Rotate_Data;
+   implements {
+      Efl.Object.constructor;
+      Efl.Object.destructor;
+   }
+}

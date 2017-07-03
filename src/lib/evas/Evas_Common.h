@@ -3356,6 +3356,13 @@ typedef Eo Efl_Animation_Instance_Alpha;
 
 #endif
 
+#ifndef _EFL_ANIMATION_INSTANCE_ROTATE_EO_CLASS_TYPE
+#define _EFL_ANIMATION_INSTANCE_ROTATE_EO_CLASS_TYPE
+
+typedef Eo Efl_Animation_Instance_Rotate;
+
+#endif
+
 struct _Efl_Animation_Instance_Animate_Event_Info
 {
    double progress;
