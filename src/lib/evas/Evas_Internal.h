@@ -101,6 +101,8 @@ EOAPI void efl_animation_instance_map_reset(Eo *obj);
 
 EOAPI void efl_animation_instance_final_state_show(Eo *obj);
 
+EOAPI void efl_animation_instance_alpha_set(Eo *obj, double from_alpha, double to_alpha);
+
 #ifdef __cplusplus
 }
 #endif

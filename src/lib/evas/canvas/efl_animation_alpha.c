@@ -50,6 +50,28 @@ _efl_animation_alpha_alpha_get(Eo *eo_obj EINA_UNUSED, Evas_Object_Animation_Alp
      *to_alpha = pd->to.alpha;
 }
 
+EOLIAN static Efl_Animation_Instance *
+_efl_animation_alpha_efl_animation_instance_create(Eo *eo_obj, Evas_Object_Animation_Alpha_Data *pd)
+{
+   EFL_ANIMATION_ALPHA_CHECK_OR_RETURN(eo_obj, NULL);
+
+   Efl_Animation_Instance_Alpha *instance
+      = efl_add(EFL_ANIMATION_INSTANCE_ALPHA_CLASS, NULL);
+
+   Efl_Canvas_Object *target = efl_animation_target_get(eo_obj);
+   efl_animation_instance_target_set(instance, target);
+
+   Eina_Bool state_keep = efl_animation_final_state_keep_get(eo_obj);
+   efl_animation_instance_final_state_keep_set(instance, state_keep);
+
+   double duration = efl_animation_duration_get(eo_obj);
+   efl_animation_instance_duration_set(instance, duration);
+
+   efl_animation_instance_alpha_set(instance, pd->from.alpha, pd->to.alpha);
+
+   return instance;
+}
+
 EOLIAN static Efl_Object *
 _efl_animation_alpha_efl_object_constructor(Eo *eo_obj, Evas_Object_Animation_Alpha_Data *pd)
 {

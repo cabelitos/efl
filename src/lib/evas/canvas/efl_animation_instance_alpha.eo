@@ -1,0 +1,12 @@
+import efl_animation_types;
+
+class Efl.Animation.Instance.Alpha (Efl.Animation.Instance)
+{
+   [[Efl alpha animation instance class]]
+   legacy_prefix: evas_object_animation_instance;
+   data: Evas_Object_Animation_Instance_Alpha_Data;
+   implements {
+      Efl.Object.constructor;
+      Efl.Object.destructor;
+   }
+}
