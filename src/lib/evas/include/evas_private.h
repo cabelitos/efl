@@ -108,6 +108,8 @@ typedef struct _Evas_Pointer_Data           Evas_Pointer_Data;
 typedef struct _Evas_Filter_Command         Evas_Filter_Command;
 typedef enum _Evas_Filter_Support           Evas_Filter_Support;
 
+typedef struct _Evas_Object_Animation_Data                            Evas_Object_Animation_Data;
+
 // 3D stuff
 
 #define EVAS_CANVAS3D_VERTEX_ATTRIB_COUNT    5

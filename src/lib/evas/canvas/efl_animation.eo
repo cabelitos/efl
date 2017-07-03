@@ -1,0 +1,41 @@
+import efl_animation_types;
+
+abstract Efl.Animation (Efl.Object)
+{
+   [[Efl animation abstract class]]
+   legacy_prefix: evas_object_animation;
+   data: Evas_Object_Animation_Data;
+   methods {
+      @property target {
+         set {
+         }
+         get {
+         }
+         values {
+            target: Efl.Canvas.Object; [[Target object which is applied animation]]
+         }
+      }
+      @property final_state_keep {
+         set {
+         }
+         get {
+         }
+         values {
+            state_keep: bool; [[$true to keep final state, $false otherwise]]
+         }
+      }
+      @property duration {
+         set {
+         }
+         get {
+         }
+         values {
+            duration: double; [[Duration value]]
+         }
+      }
+   }
+   implements {
+      Efl.Object.constructor;
+      Efl.Object.destructor;
+   }
+}
