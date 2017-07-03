@@ -71,6 +71,7 @@
 #include "canvas/efl_animation_rotate.eo.h"
 #include "canvas/efl_animation_scale.eo.h"
 #include "canvas/efl_animation_translate.eo.h"
+#include "canvas/efl_animation_group.eo.h"
 #include "canvas/efl_animation_instance.eo.h"
 #include "canvas/efl_animation_instance_alpha.eo.h"
 #include "canvas/efl_animation_instance_rotate.eo.h"
