@@ -1,0 +1,12 @@
+import efl_animation_types;
+
+abstract Efl.Animation.Instance.Group (Efl.Animation.Instance)
+{
+   [[Efl group animation instance abstract class]]
+   legacy_prefix: evas_object_animation_instance;
+   data: Evas_Object_Animation_Instance_Group_Data;
+   implements {
+      Efl.Object.constructor;
+      Efl.Object.destructor;
+   }
+}

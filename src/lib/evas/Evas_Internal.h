@@ -121,6 +121,15 @@ EOAPI void efl_animation_instance_translate_get(const Eo *obj, int *from_x, int 
 EOAPI void efl_animation_instance_translate_absolute_set(Eo *obj, int from_x, int from_y, int to_x, int to_y);
 EOAPI void efl_animation_instance_translate_absolute_get(const Eo *obj, int *from_x, int *from_y, int *to_x, int *to_y);
 
+EOAPI void efl_animation_instance_group_instance_add(Eo *obj, Efl_Animation_Instance *animation);
+
+EOAPI void efl_animation_instance_group_instance_del(Eo *obj, Efl_Animation_Instance *animation);
+
+EOAPI Eina_List *efl_animation_instance_group_instances_get(Eo *obj);
+
+EWAPI extern const Efl_Event_Description _EFL_ANIMATION_INSTANCE_GROUP_EVENT_MEMBER_POST_END;
+#define EFL_ANIMATION_INSTANCE_GROUP_EVENT_MEMBER_POST_END (&(_EFL_ANIMATION_INSTANCE_GROUP_EVENT_MEMBER_POST_END))
+
 #ifdef __cplusplus
 }
 #endif
