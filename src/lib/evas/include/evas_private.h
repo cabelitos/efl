@@ -114,6 +114,7 @@ typedef struct _Evas_Object_Animation_Scale_Data                      Evas_Objec
 typedef struct _Evas_Object_Animation_Translate_Data                  Evas_Object_Animation_Translate_Data;
 typedef struct _Evas_Object_Animation_Group_Data                      Evas_Object_Animation_Group_Data;
 typedef struct _Evas_Object_Animation_Group_Parallel_Data             Evas_Object_Animation_Group_Parallel_Data;
+typedef struct _Evas_Object_Animation_Group_Sequential_Data           Evas_Object_Animation_Group_Sequential_Data;
 typedef struct _Evas_Object_Animation_Data                            Evas_Object_Animation_Data;
 typedef struct _Evas_Object_Animation_Instance_Alpha_Data             Evas_Object_Animation_Instance_Alpha_Data;
 typedef struct _Evas_Object_Animation_Instance_Rotate_Data            Evas_Object_Animation_Instance_Rotate_Data;
@@ -121,6 +122,7 @@ typedef struct _Evas_Object_Animation_Instance_Scale_Data             Evas_Objec
 typedef struct _Evas_Object_Animation_Instance_Translate_Data         Evas_Object_Animation_Instance_Translate_Data;
 typedef struct _Evas_Object_Animation_Instance_Group_Data             Evas_Object_Animation_Instance_Group_Data;
 typedef struct _Evas_Object_Animation_Instance_Group_Parallel_Data    Evas_Object_Animation_Instance_Group_Parallel_Data;
+typedef struct _Evas_Object_Animation_Instance_Group_Sequential_Data  Evas_Object_Animation_Instance_Group_Sequential_Data;
 typedef struct _Evas_Object_Animation_Instance_Data                   Evas_Object_Animation_Instance_Data;
 
 // 3D stuff

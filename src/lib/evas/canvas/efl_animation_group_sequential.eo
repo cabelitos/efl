@@ -1,0 +1,13 @@
+import efl_animation_types;
+
+class Efl.Animation.Group.Sequential (Efl.Animation.Group)
+{
+   [[Efl group sequential animation class]]
+   legacy_prefix: evas_object_animation;
+   data: Evas_Object_Animation_Group_Sequential_Data;
+   methods {
+   }
+   implements {
+      Efl.Animation.instance_create;
+   }
+}
