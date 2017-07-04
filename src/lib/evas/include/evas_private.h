@@ -125,6 +125,11 @@ typedef struct _Evas_Object_Animation_Instance_Group_Parallel_Data    Evas_Objec
 typedef struct _Evas_Object_Animation_Instance_Group_Sequential_Data  Evas_Object_Animation_Instance_Group_Sequential_Data;
 typedef struct _Evas_Object_Animation_Instance_Data                   Evas_Object_Animation_Instance_Data;
 
+//These macros are matched to Efl_Animation_Event_Type enum values.
+#define EFL_ANIMATION_EVENT_TYPE_SHOW_STR    "show"
+#define EFL_ANIMATION_EVENT_TYPE_HIDE_STR    "hide"
+#define EFL_ANIMATION_EVENT_TYPE_CLICKED_STR "clicked"
+
 // 3D stuff
 
 #define EVAS_CANVAS3D_VERTEX_ATTRIB_COUNT    5
@@ -1232,6 +1237,8 @@ struct _Evas_Object_Protected_Data
 
    unsigned char               no_change_render;
    unsigned char               delete_me;
+
+   Eina_Array                 *event_anims; //Array of Efl_Animation
 
    Eina_Bool                   render_pre : 1;
    Eina_Bool                   rect_del : 1;

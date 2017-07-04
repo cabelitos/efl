@@ -2,3 +2,13 @@
 // All the below types are for Efl Animation
 
 struct Efl.Animation.Instance.Animate_Event_Info; [[Information of animate event]]
+
+enum Efl.Animation.Event_Type
+{
+   [[Animation event type]]
+
+   show = 0, [["show" event type]]
+   hide,     [["hide" event type]]
+   clicked,  [["clicked" event type]]
+   count     [[total count of event type]]
+}
