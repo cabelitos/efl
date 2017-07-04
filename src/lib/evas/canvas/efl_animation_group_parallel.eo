@@ -1,0 +1,13 @@
+import efl_animation_types;
+
+class Efl.Animation.Group.Parallel (Efl.Animation.Group)
+{
+   [[Efl group parallel animation class]]
+   legacy_prefix: evas_object_animation;
+   data: Evas_Object_Animation_Group_Parallel_Data;
+   methods {
+   }
+   implements {
+      Efl.Animation.instance_create;
+   }
+}
