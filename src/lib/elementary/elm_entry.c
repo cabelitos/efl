@@ -3258,7 +3258,7 @@ _elm_entry_text_get(Eo *obj, Elm_Entry_Data *sd, const char *item)
    const char *text;
 
    if (!_elm_layout_part_aliasing_eval(obj, &item, EINA_TRUE))
-     return NULL;
+     return EINA_FALSE;
 
    if (strcmp(item, "elm.text"))
      return edje_object_part_text_get(sd->entry_edje, item);
