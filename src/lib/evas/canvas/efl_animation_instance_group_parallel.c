@@ -4,14 +4,14 @@
 #define MY_CLASS EFL_ANIMATION_INSTANCE_GROUP_PARALLEL_CLASS
 #define MY_CLASS_NAME efl_class_name_get(MY_CLASS)
 
-#define EFL_ANIMATION_INSTANCE_GROUP_PARALLEL_CHECK_OR_RETURN(anim, ...) \
+#define EFL_ANIMATION_INSTANCE_GROUP_PARALLEL_CHECK_OR_RETURN(inst, ...) \
    do { \
-      if (!anim) { \
-         CRI("Efl_Animation_Instance " # anim " is NULL!"); \
+      if (!inst) { \
+         CRI("Efl_Animation_Instance " # inst " is NULL!"); \
          return __VA_ARGS__; \
       } \
-      if (efl_animation_instance_is_deleted(anim)) { \
-         ERR("Efl_Animation_Instance " # anim " has already been deleted!"); \
+      if (efl_animation_instance_is_deleted(inst)) { \
+         ERR("Efl_Animation_Instance " # inst " has already been deleted!"); \
          return __VA_ARGS__; \
       } \
    } while (0)
@@ -137,13 +137,13 @@ _start(Eo *eo_obj, Evas_Object_Animation_Instance_Group_Parallel_Data *pd)
 
    efl_event_callback_call(eo_obj, EFL_ANIMATION_INSTANCE_EVENT_START, NULL);
 
-   Eina_List *animations = efl_animation_instance_group_instances_get(eo_obj);
+   Eina_List *instances = efl_animation_instance_group_instances_get(eo_obj);
    Eina_List *l;
-   Efl_Animation *anim;
-   EINA_LIST_FOREACH(animations, l, anim)
+   Efl_Animation *inst;
+   EINA_LIST_FOREACH(instances, l, inst)
      {
-        //Data should be registered before animation starts
-        efl_animation_instance_member_start(anim);
+        //Data should be registered before animation instance starts
+        efl_animation_instance_member_start(inst);
         pd->animate_inst_count++;
      }
 }

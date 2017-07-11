@@ -4,14 +4,14 @@
 #define MY_CLASS EFL_ANIMATION_INSTANCE_GROUP_CLASS
 #define MY_CLASS_NAME efl_class_name_get(MY_CLASS)
 
-#define EFL_ANIMATION_INSTANCE_GROUP_CHECK_OR_RETURN(anim, ...) \
+#define EFL_ANIMATION_INSTANCE_GROUP_CHECK_OR_RETURN(inst, ...) \
    do { \
-      if (!anim) { \
-         CRI("Efl_Animation_Instance " # anim " is NULL!"); \
+      if (!inst) { \
+         CRI("Efl_Animation_Instance " # inst " is NULL!"); \
          return __VA_ARGS__; \
       } \
-      if (efl_animation_instance_is_deleted(anim)) { \
-         ERR("Efl_Animation_Instance " # anim " has already been deleted!"); \
+      if (efl_animation_instance_is_deleted(inst)) { \
+         ERR("Efl_Animation_Instance " # inst " has already been deleted!"); \
          return __VA_ARGS__; \
       } \
    } while (0)
@@ -165,9 +165,9 @@ _efl_animation_instance_group_efl_object_destructor(Eo *eo_obj,
 
 /* Internal EO APIs */
 
-EOAPI EFL_VOID_FUNC_BODYV(efl_animation_instance_group_instance_add, EFL_FUNC_CALL(animation), Efl_Animation_Instance *animation);
+EOAPI EFL_VOID_FUNC_BODYV(efl_animation_instance_group_instance_add, EFL_FUNC_CALL(instance), Efl_Animation_Instance *instance);
 
-EOAPI EFL_VOID_FUNC_BODYV(efl_animation_instance_group_instance_del, EFL_FUNC_CALL(animation), Efl_Animation_Instance *animation);
+EOAPI EFL_VOID_FUNC_BODYV(efl_animation_instance_group_instance_del, EFL_FUNC_CALL(instance), Efl_Animation_Instance *instance);
 
 EOAPI EFL_FUNC_BODY(efl_animation_instance_group_instances_get, Eina_List *, NULL);
 

@@ -4,14 +4,14 @@
 #define MY_CLASS EFL_ANIMATION_INSTANCE_GROUP_SEQUENTIAL_CLASS
 #define MY_CLASS_NAME efl_class_name_get(MY_CLASS)
 
-#define EFL_ANIMATION_INSTANCE_GROUP_SEQUENTIAL_CHECK_OR_RETURN(anim, ...) \
+#define EFL_ANIMATION_INSTANCE_GROUP_SEQUENTIAL_CHECK_OR_RETURN(inst, ...) \
    do { \
-      if (!anim) { \
-         CRI("Efl_Animation_Instance " # anim " is NULL!"); \
+      if (!inst) { \
+         CRI("Efl_Animation_Instance " # inst " is NULL!"); \
          return __VA_ARGS__; \
       } \
-      if (efl_animation_instance_is_deleted(anim)) { \
-         ERR("Efl_Animation_Instance " # anim " has already been deleted!"); \
+      if (efl_animation_instance_is_deleted(inst)) { \
+         ERR("Efl_Animation_Instance " # inst " has already been deleted!"); \
          return __VA_ARGS__; \
       } \
    } while (0)
@@ -81,8 +81,8 @@ _post_end_cb(void *data, const Efl_Event *event)
 
    pd->current_index++;
 
-   Eina_List *animations = efl_animation_instance_group_instances_get(eo_obj);
-   if (eina_list_count(animations) == pd->current_index)
+   Eina_List *instances = efl_animation_instance_group_instances_get(eo_obj);
+   if (eina_list_count(instances) == pd->current_index)
      {
         pd->current_index = 0;
 
@@ -119,12 +119,12 @@ _member_post_end_cb(void *data, const Efl_Event *event)
 static void
 _index_animation_start(Eo *eo_obj, int index)
 {
-   Efl_Animation_Instance *anim =
+   Efl_Animation_Instance *inst =
       eina_list_nth(efl_animation_instance_group_instances_get(eo_obj), index);
-   if (!anim || efl_animation_instance_is_deleted(anim))
+   if (!inst || efl_animation_instance_is_deleted(inst))
      return;
 
-   efl_animation_instance_member_start(anim);
+   efl_animation_instance_member_start(inst);
 }
 
 static void

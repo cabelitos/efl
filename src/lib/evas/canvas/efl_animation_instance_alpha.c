@@ -4,14 +4,14 @@
 #define MY_CLASS EFL_ANIMATION_INSTANCE_ALPHA_CLASS
 #define MY_CLASS_NAME efl_class_name_get(MY_CLASS)
 
-#define EFL_ANIMATION_INSTANCE_ALPHA_CHECK_OR_RETURN(anim, ...) \
+#define EFL_ANIMATION_INSTANCE_ALPHA_CHECK_OR_RETURN(inst, ...) \
    do { \
-      if (!anim) { \
-         CRI("Efl_Animation_Instance " # anim " is NULL!"); \
+      if (!inst) { \
+         CRI("Efl_Animation_Instance " # inst " is NULL!"); \
          return __VA_ARGS__; \
       } \
-      if (efl_animation_instance_is_deleted(anim)) { \
-         ERR("Efl_Animation_Instance " # anim " has already been deleted!"); \
+      if (efl_animation_instance_is_deleted(inst)) { \
+         ERR("Efl_Animation_Instance " # inst " has already been deleted!"); \
          return __VA_ARGS__; \
       } \
    } while (0)

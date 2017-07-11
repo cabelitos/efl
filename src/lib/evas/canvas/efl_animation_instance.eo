@@ -7,16 +7,16 @@ abstract Efl.Animation.Instance (Efl.Object)
    data: Evas_Object_Animation_Instance_Data;
    methods {
       start {
-         [[Start animation.]]
+         [[Start animation instance.]]
       }
       cancel {
-         [[Cancel animation.]]
+         [[Cancel animation instance.]]
       }
       pause {
-         [[Pause animation.]]
+         [[Pause animation instance.]]
       }
       resume {
-         [[Resume animation.]]
+         [[Resume animation instance.]]
       }
    }
    implements {
