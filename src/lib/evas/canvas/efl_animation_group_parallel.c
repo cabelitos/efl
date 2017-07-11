@@ -44,13 +44,15 @@ _efl_animation_group_parallel_efl_animation_instance_create(Eo *eo_obj,
      }
 
    Efl_Canvas_Object *target = efl_animation_target_get(eo_obj);
-   efl_animation_instance_target_set(group_inst, target);
+   if (target)
+     efl_animation_instance_target_set(group_inst, target);
+
+   double duration = efl_animation_duration_get(eo_obj);
+   if (duration > 0.0)
+     efl_animation_instance_duration_set(group_inst, duration);
 
    Eina_Bool state_keep = efl_animation_final_state_keep_get(eo_obj);
    efl_animation_instance_final_state_keep_set(group_inst, state_keep);
-
-   double duration = efl_animation_duration_get(eo_obj);
-   efl_animation_instance_duration_set(group_inst, duration);
 
    return group_inst;
 }

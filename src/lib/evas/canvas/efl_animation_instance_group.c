@@ -34,10 +34,12 @@ _efl_animation_instance_group_instance_add(Eo *eo_obj,
    if (!instance) return;
 
    Efl_Canvas_Object *target = efl_animation_instance_target_get(eo_obj);
-   efl_animation_instance_target_set(instance, target);
+   if (target)
+     efl_animation_instance_target_set(instance, target);
 
    double duration = efl_animation_instance_duration_get(eo_obj);
-   efl_animation_instance_duration_set(instance, duration);
+   if (duration > 0.0)
+     efl_animation_instance_duration_set(instance, duration);
 
    Eina_Bool state_keep = efl_animation_instance_final_state_keep_get(eo_obj);
    efl_animation_instance_final_state_keep_set(instance, state_keep);
