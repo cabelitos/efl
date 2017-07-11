@@ -228,11 +228,10 @@ end:
    return ECORE_CALLBACK_CANCEL;
 }
 
-static Eina_Bool
+static void
 _start(Eo *eo_obj, Evas_Object_Animation_Instance_Data *pd)
 {
-   if (pd->duration <= 0.0)
-     return EINA_FALSE;
+   if (pd->duration <= 0.0) return;
 
    //Save current state of target object
    _target_state_save(pd->target, pd->target_state);
@@ -252,37 +251,35 @@ _start(Eo *eo_obj, Evas_Object_Animation_Instance_Data *pd)
    pd->animator = ecore_animator_add(_animator_cb, eo_obj);
 
    _animator_cb(eo_obj);
-
-   return EINA_TRUE;
 }
 
-EOLIAN static Eina_Bool
+EOLIAN static void
 _efl_animation_instance_start(Eo *eo_obj,
                               Evas_Object_Animation_Instance_Data *pd)
 {
-   EFL_ANIMATION_INSTANCE_CHECK_OR_RETURN(eo_obj, EINA_FALSE);
+   EFL_ANIMATION_INSTANCE_CHECK_OR_RETURN(eo_obj);
 
    pd->is_group_member = EINA_FALSE;
 
-   return _start(eo_obj, pd);
+   _start(eo_obj, pd);
 }
 
-EOLIAN static Eina_Bool
+EOLIAN static void
 _efl_animation_instance_member_start(Eo *eo_obj,
                                      Evas_Object_Animation_Instance_Data *pd)
 {
-   EFL_ANIMATION_INSTANCE_CHECK_OR_RETURN(eo_obj, EINA_FALSE);
+   EFL_ANIMATION_INSTANCE_CHECK_OR_RETURN(eo_obj);
 
    pd->is_group_member = EINA_TRUE;
 
-   return _start(eo_obj, pd);
+   _start(eo_obj, pd);
 }
 
-EOLIAN static Eina_Bool
+EOLIAN static void
 _efl_animation_instance_cancel(Eo *eo_obj,
                                Evas_Object_Animation_Instance_Data *pd)
 {
-   EFL_ANIMATION_INSTANCE_CHECK_OR_RETURN(eo_obj, EINA_FALSE);
+   EFL_ANIMATION_INSTANCE_CHECK_OR_RETURN(eo_obj);
 
    pd->cancelled = EINA_TRUE;
 
@@ -301,8 +298,6 @@ _efl_animation_instance_cancel(Eo *eo_obj,
         //post end event is supported within class only (protected event)
         efl_event_callback_call(eo_obj, EFL_ANIMATION_INSTANCE_EVENT_POST_END, NULL);
      }
-
-   return EINA_TRUE;
 }
 
 EOLIAN static void
@@ -385,7 +380,7 @@ EOAPI EFL_FUNC_BODY_CONST(efl_animation_instance_duration_get, double, 0);
 
 EOAPI EFL_FUNC_BODY(efl_animation_instance_is_deleted, Eina_Bool, 0);
 
-EOAPI EFL_FUNC_BODY(efl_animation_instance_member_start, Eina_Bool, 0);
+EOAPI EFL_VOID_FUNC_BODY(efl_animation_instance_member_start);
 
 EOAPI EFL_VOID_FUNC_BODY(efl_animation_instance_map_reset);
 

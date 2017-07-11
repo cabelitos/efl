@@ -125,7 +125,7 @@ _member_post_end_cb(void *data, const Efl_Event *event)
                            NULL);
 }
 
-static Eina_Bool
+static void
 _start(Eo *eo_obj, Evas_Object_Animation_Instance_Group_Parallel_Data *pd)
 {
    pd->animate_inst_count = 0;
@@ -133,44 +133,37 @@ _start(Eo *eo_obj, Evas_Object_Animation_Instance_Group_Parallel_Data *pd)
 
    efl_event_callback_call(eo_obj, EFL_ANIMATION_INSTANCE_EVENT_START, NULL);
 
-   Eina_Bool ret = EINA_FALSE;
-
    Eina_List *animations = efl_animation_instance_group_instances_get(eo_obj);
    Eina_List *l;
    Efl_Animation *anim;
    EINA_LIST_FOREACH(animations, l, anim)
      {
         //Data should be registered before animation starts
-        if (efl_animation_instance_member_start(anim))
-          {
-             pd->animate_inst_count++;
-             ret = EINA_TRUE;
-          }
+        efl_animation_instance_member_start(anim);
+        pd->animate_inst_count++;
      }
-
-   return ret;
 }
 
-EOLIAN static Eina_Bool
+EOLIAN static void
 _efl_animation_instance_group_parallel_efl_animation_instance_start(Eo *eo_obj,
                                                                     Evas_Object_Animation_Instance_Group_Parallel_Data *pd)
 {
-   EFL_ANIMATION_INSTANCE_GROUP_PARALLEL_CHECK_OR_RETURN(eo_obj, EINA_FALSE);
+   EFL_ANIMATION_INSTANCE_GROUP_PARALLEL_CHECK_OR_RETURN(eo_obj);
 
    pd->is_group_member = EINA_FALSE;
 
-   return _start(eo_obj, pd);
+   _start(eo_obj, pd);
 }
 
-EOLIAN static Eina_Bool
+EOLIAN static void
 _efl_animation_instance_group_parallel_efl_animation_instance_member_start(Eo *eo_obj,
                                                                            Evas_Object_Animation_Instance_Group_Parallel_Data *pd)
 {
-   EFL_ANIMATION_INSTANCE_GROUP_PARALLEL_CHECK_OR_RETURN(eo_obj, EINA_FALSE);
+   EFL_ANIMATION_INSTANCE_GROUP_PARALLEL_CHECK_OR_RETURN(eo_obj);
 
    pd->is_group_member = EINA_TRUE;
 
-   return _start(eo_obj, pd);
+   _start(eo_obj, pd);
 }
 
 EOLIAN static void

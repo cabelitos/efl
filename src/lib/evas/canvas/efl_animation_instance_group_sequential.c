@@ -28,7 +28,7 @@ struct _Evas_Object_Animation_Instance_Group_Sequential_Data
    Eina_Bool    is_group_member : 1;
 };
 
-static Eina_Bool _index_animation_start(Eo *eo_obj, int index);
+static void _index_animation_start(Eo *eo_obj, int index);
 
 static void
 _pre_animate_cb(void *data, const Efl_Event *event)
@@ -114,47 +114,47 @@ _member_post_end_cb(void *data, const Efl_Event *event)
                            NULL);
 }
 
-static Eina_Bool
+static void
 _index_animation_start(Eo *eo_obj, int index)
 {
    Efl_Animation_Instance *anim =
       eina_list_nth(efl_animation_instance_group_instances_get(eo_obj), index);
    if (!anim || efl_animation_instance_is_deleted(anim))
-     return EINA_FALSE;
+     return;
 
-   return efl_animation_instance_member_start(anim);
+   efl_animation_instance_member_start(anim);
 }
 
-static Eina_Bool
+static void
 _start(Eo *eo_obj, Evas_Object_Animation_Instance_Group_Sequential_Data *pd)
 {
    pd->current_index = 0;
 
    efl_event_callback_call(eo_obj, EFL_ANIMATION_INSTANCE_EVENT_START, NULL);
 
-   return _index_animation_start(eo_obj, pd->current_index);
+   _index_animation_start(eo_obj, pd->current_index);
 }
 
-EOLIAN static Eina_Bool
+EOLIAN static void
 _efl_animation_instance_group_sequential_efl_animation_instance_start(Eo *eo_obj,
                                                                       Evas_Object_Animation_Instance_Group_Sequential_Data *pd)
 {
-   EFL_ANIMATION_INSTANCE_GROUP_SEQUENTIAL_CHECK_OR_RETURN(eo_obj, EINA_FALSE);
+   EFL_ANIMATION_INSTANCE_GROUP_SEQUENTIAL_CHECK_OR_RETURN(eo_obj);
 
    pd->is_group_member = EINA_FALSE;
 
-   return _start(eo_obj, pd);
+   _start(eo_obj, pd);
 }
 
-EOLIAN static Eina_Bool
+EOLIAN static void
 _efl_animation_instance_group_sequential_efl_animation_instance_member_start(Eo *eo_obj,
                                                                              Evas_Object_Animation_Instance_Group_Sequential_Data *pd)
 {
-   EFL_ANIMATION_INSTANCE_GROUP_SEQUENTIAL_CHECK_OR_RETURN(eo_obj, EINA_FALSE);
+   EFL_ANIMATION_INSTANCE_GROUP_SEQUENTIAL_CHECK_OR_RETURN(eo_obj);
 
    pd->is_group_member = EINA_TRUE;
 
-   return _start(eo_obj, pd);
+   _start(eo_obj, pd);
 }
 
 EOLIAN static void

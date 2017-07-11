@@ -8,11 +8,9 @@ abstract Efl.Animation.Instance (Efl.Object)
    methods {
       start {
          [[Start animation.]]
-         return: bool; [[$true on success, $false otherwise]]
       }
       cancel {
          [[Cancel animation.]]
-         return: bool; [[$true on success, $false otherwise]]
       }
    }
    implements {
