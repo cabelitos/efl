@@ -9,5 +9,7 @@ class Efl.Animation.Instance.Group.Parallel (Efl.Animation.Instance.Group)
    }
    implements {
       Efl.Animation.Instance.start;
+      Efl.Animation.Instance.pause;
+      Efl.Animation.Instance.resume;
    }
 }

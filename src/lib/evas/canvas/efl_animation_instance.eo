@@ -12,6 +12,12 @@ abstract Efl.Animation.Instance (Efl.Object)
       cancel {
          [[Cancel animation.]]
       }
+      pause {
+         [[Pause animation.]]
+      }
+      resume {
+         [[Resume animation.]]
+      }
    }
    implements {
       Efl.Object.constructor;

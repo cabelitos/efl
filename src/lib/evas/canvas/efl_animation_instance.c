@@ -43,6 +43,7 @@ struct _Evas_Object_Animation_Instance_Data
      {
         double begin;
         double current;
+        double pause_begin;
      } time;
 
    Efl_Canvas_Object *target;
@@ -50,10 +51,13 @@ struct _Evas_Object_Animation_Instance_Data
 
    double             progress;
    double             duration;
+   double             paused_time;
 
    Eina_Bool          deleted : 1;
+   Eina_Bool          started : 1;
    Eina_Bool          cancelled : 1;
    Eina_Bool          ended : 1;
+   Eina_Bool          paused : 1;
    Eina_Bool          state_keep : 1;
    Eina_Bool          is_group_member : 1;
 };
@@ -180,19 +184,28 @@ _animator_cb(void *data)
    Eo *eo_obj = data;
    EFL_ANIMATION_INSTANCE_DATA_GET(eo_obj, pd);
 
+   if (pd->paused)
+     {
+        pd->animator = NULL;
+        return ECORE_CALLBACK_CANCEL;
+     }
+
    if (pd->cancelled) goto end;
 
-   double elapsed_time, duration;
-
-   pd->time.current = ecore_loop_time_get();
-   elapsed_time = pd->time.current - pd->time.begin;
-   duration = pd->duration;
-   if (elapsed_time > duration)
-     elapsed_time = duration;
-
+   double duration = pd->duration;
    if (duration <= 0.0) goto end;
 
-   pd->progress = elapsed_time / duration;
+   pd->time.current = ecore_loop_time_get();
+   double elapsed_time = pd->time.current - pd->time.begin;
+   double paused_time = pd->paused_time;
+
+   if ((elapsed_time - paused_time) > duration)
+     {
+        elapsed_time = duration + paused_time;
+        pd->progress = 1.0;
+     }
+   else
+     pd->progress = (elapsed_time - paused_time) / duration;
 
    Efl_Animation_Instance_Animate_Event_Info event_info;
    event_info.progress = pd->progress;
@@ -210,7 +223,7 @@ _animator_cb(void *data)
    efl_event_callback_call(eo_obj, EFL_ANIMATION_INSTANCE_EVENT_ANIMATE, &event_info);
 
   /* Not end. Keep going. */
-   if (elapsed_time < duration) return ECORE_CALLBACK_RENEW;
+   if ((elapsed_time - paused_time) < duration) return ECORE_CALLBACK_RENEW;
 
 end:
    pd->ended = EINA_TRUE;
@@ -233,16 +246,28 @@ _start(Eo *eo_obj, Evas_Object_Animation_Instance_Data *pd)
 {
    if (pd->duration <= 0.0) return;
 
+   //Resume animation if animation is paused
+   if (pd->paused)
+     {
+        efl_animation_instance_resume(eo_obj);
+        return;
+     }
+
    //Save current state of target object
    _target_state_save(pd->target, pd->target_state);
 
    pd->cancelled = EINA_FALSE;
    pd->ended = EINA_FALSE;
+   pd->paused = EINA_FALSE;
+
+   pd->paused_time = 0.0;
 
    ecore_animator_del(pd->animator);
    pd->animator = NULL;
 
    pd->time.begin = ecore_loop_time_get();
+
+   pd->started = EINA_TRUE;
 
    //pre start event is supported within class only (protected event)
    efl_event_callback_call(eo_obj, EFL_ANIMATION_INSTANCE_EVENT_PRE_START, NULL);
@@ -259,6 +284,8 @@ _efl_animation_instance_start(Eo *eo_obj,
 {
    EFL_ANIMATION_INSTANCE_CHECK_OR_RETURN(eo_obj);
 
+   if (pd->paused) return;
+
    pd->is_group_member = EINA_FALSE;
 
    _start(eo_obj, pd);
@@ -269,6 +296,8 @@ _efl_animation_instance_member_start(Eo *eo_obj,
                                      Evas_Object_Animation_Instance_Data *pd)
 {
    EFL_ANIMATION_INSTANCE_CHECK_OR_RETURN(eo_obj);
+
+   if (pd->paused) return;
 
    pd->is_group_member = EINA_TRUE;
 
@@ -298,6 +327,45 @@ _efl_animation_instance_cancel(Eo *eo_obj,
         //post end event is supported within class only (protected event)
         efl_event_callback_call(eo_obj, EFL_ANIMATION_INSTANCE_EVENT_POST_END, NULL);
      }
+}
+
+EOLIAN static void
+_efl_animation_instance_pause(Eo *eo_obj,
+                              Evas_Object_Animation_Instance_Data *pd)
+{
+   EFL_ANIMATION_INSTANCE_CHECK_OR_RETURN(eo_obj);
+
+   if (!pd->started) return;
+
+   if (pd->ended) return;
+
+   if (pd->paused) return;
+   pd->paused = EINA_TRUE;
+
+   ecore_animator_del(pd->animator);
+   pd->animator = NULL;
+
+   pd->time.pause_begin = ecore_loop_time_get();
+}
+
+EOLIAN static void
+_efl_animation_instance_resume(Eo *eo_obj,
+                               Evas_Object_Animation_Instance_Data *pd)
+{
+   EFL_ANIMATION_INSTANCE_CHECK_OR_RETURN(eo_obj);
+
+   if (!pd->started) return;
+
+   if (pd->ended) return;
+
+   if (!pd->paused) return;
+   pd->paused = EINA_FALSE;
+
+   pd->paused_time += (ecore_loop_time_get() - pd->time.pause_begin);
+
+   pd->animator = ecore_animator_add(_animator_cb, eo_obj);
+
+   _animator_cb(eo_obj);
 }
 
 EOLIAN static void

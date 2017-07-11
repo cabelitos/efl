@@ -26,6 +26,8 @@ struct _Evas_Object_Animation_Instance_Group_Parallel_Data
 
    Eina_List *finished_inst_list;
 
+   Eina_Bool  started : 1;
+   Eina_Bool  paused : 1;
    Eina_Bool  is_group_member : 1;
 };
 
@@ -131,6 +133,8 @@ _start(Eo *eo_obj, Evas_Object_Animation_Instance_Group_Parallel_Data *pd)
    pd->animate_inst_count = 0;
    pd->animate_inst_index = 0;
 
+   pd->started = EINA_TRUE;
+
    efl_event_callback_call(eo_obj, EFL_ANIMATION_INSTANCE_EVENT_START, NULL);
 
    Eina_List *animations = efl_animation_instance_group_instances_get(eo_obj);
@@ -150,6 +154,8 @@ _efl_animation_instance_group_parallel_efl_animation_instance_start(Eo *eo_obj,
 {
    EFL_ANIMATION_INSTANCE_GROUP_PARALLEL_CHECK_OR_RETURN(eo_obj);
 
+   if (pd->paused) return;
+
    pd->is_group_member = EINA_FALSE;
 
    _start(eo_obj, pd);
@@ -161,9 +167,53 @@ _efl_animation_instance_group_parallel_efl_animation_instance_member_start(Eo *e
 {
    EFL_ANIMATION_INSTANCE_GROUP_PARALLEL_CHECK_OR_RETURN(eo_obj);
 
+   if (pd->paused) return;
+
    pd->is_group_member = EINA_TRUE;
 
    _start(eo_obj, pd);
+}
+
+EOLIAN static void
+_efl_animation_instance_group_parallel_efl_animation_instance_pause(Eo *eo_obj,
+                                                                    Evas_Object_Animation_Instance_Group_Parallel_Data *pd)
+{
+   EFL_ANIMATION_INSTANCE_GROUP_PARALLEL_CHECK_OR_RETURN(eo_obj);
+
+   if (!pd->started) return;
+
+   if (pd->paused) return;
+   pd->paused = EINA_TRUE;
+
+   Eina_List *inst_list = efl_animation_instance_group_instances_get(eo_obj);
+   Eina_List *l;
+   Efl_Animation_Instance *inst;
+
+   EINA_LIST_FOREACH(inst_list, l, inst)
+     {
+        efl_animation_instance_pause(inst);
+     }
+}
+
+EOLIAN static void
+_efl_animation_instance_group_parallel_efl_animation_instance_resume(Eo *eo_obj,
+                                                                     Evas_Object_Animation_Instance_Group_Parallel_Data *pd)
+{
+   EFL_ANIMATION_INSTANCE_GROUP_PARALLEL_CHECK_OR_RETURN(eo_obj);
+
+   if (!pd->started) return;
+
+   if (!pd->paused) return;
+   pd->paused = EINA_FALSE;
+
+   Eina_List *inst_list = efl_animation_instance_group_instances_get(eo_obj);
+   Eina_List *l;
+   Efl_Animation_Instance *inst;
+
+   EINA_LIST_FOREACH(inst_list, l, inst)
+     {
+        efl_animation_instance_resume(inst);
+     }
 }
 
 EOLIAN static void
