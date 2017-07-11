@@ -51,6 +51,9 @@ _efl_animation_group_sequential_efl_animation_instance_create(Eo *eo_obj,
    if (duration > 0.0)
      efl_animation_instance_duration_set(group_inst, duration);
 
+   int repeat_count = efl_animation_repeat_count_get(eo_obj);
+   efl_animation_instance_repeat_count_set(group_inst, repeat_count);
+
    Eina_Bool state_keep = efl_animation_final_state_keep_get(eo_obj);
    efl_animation_instance_final_state_keep_set(group_inst, state_keep);
 

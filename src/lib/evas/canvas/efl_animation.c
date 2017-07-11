@@ -34,6 +34,8 @@ struct _Evas_Object_Animation_Data
 
    double             duration;
 
+   int                repeat_count;
+
    Eina_Bool          deleted : 1;
    Eina_Bool          state_keep : 1;
 };
@@ -91,6 +93,27 @@ _efl_animation_duration_get(Eo *eo_obj, Evas_Object_Animation_Data *pd)
    return pd->duration;
 }
 
+EOLIAN static void
+_efl_animation_repeat_count_set(Eo *eo_obj,
+                                Evas_Object_Animation_Data *pd,
+                                int count)
+{
+   EFL_ANIMATION_CHECK_OR_RETURN(eo_obj);
+
+   //-1 repeats animation infinitely
+   if ((count < 0) && (count != -1)) return;
+
+   pd->repeat_count = count;
+}
+
+EOLIAN static int
+_efl_animation_repeat_count_get(Eo *eo_obj, Evas_Object_Animation_Data *pd)
+{
+   EFL_ANIMATION_CHECK_OR_RETURN(eo_obj, 0);
+
+   return pd->repeat_count;
+}
+
 EOLIAN static Eina_Bool
 _efl_animation_is_deleted(Eo *eo_obj, Evas_Object_Animation_Data *pd)
 {
@@ -128,6 +151,8 @@ _efl_animation_efl_object_constructor(Eo *eo_obj,
    pd->target = NULL;
 
    pd->duration = 0.0;
+
+   pd->repeat_count = 0;
 
    pd->deleted = EINA_FALSE;
    pd->state_keep = EINA_FALSE;

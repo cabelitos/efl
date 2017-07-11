@@ -33,6 +33,15 @@ abstract Efl.Animation (Efl.Object)
             duration: double; [[Duration value]]
          }
       }
+      @property repeat_count {
+         set {
+         }
+         get {
+         }
+         values {
+            count: int; [[Repeat count. -1 repeats animation infinitely.]]
+         }
+      }
       instance_create {
          [[Create instance of the animation.]]
          return: Efl.Animation.Instance; [[Created instance of the animation]]

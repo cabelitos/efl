@@ -26,6 +26,8 @@ struct _Evas_Object_Animation_Instance_Group_Sequential_Data
 
    unsigned int    current_index;
 
+   int             remaining_repeat_count;
+
    Eina_List      *finished_inst_list;
 
    Eina_Bool       started : 1;
@@ -103,6 +105,26 @@ _post_end_cb(void *data, const Efl_Event *event)
      {
         pd->current_index = 0;
 
+        int repeat_count = efl_animation_instance_repeat_count_get(eo_obj);
+        if (repeat_count > 0)
+          {
+             pd->remaining_repeat_count--;
+             if (pd->remaining_repeat_count >= 0)
+               {
+                  eina_list_free(pd->finished_inst_list);
+                  pd->finished_inst_list = NULL;
+
+                  goto next_start;
+               }
+          }
+        else if (repeat_count == -1)
+          {
+             eina_list_free(pd->finished_inst_list);
+             pd->finished_inst_list = NULL;
+
+             goto next_start;
+          }
+
         efl_event_callback_call(eo_obj, EFL_ANIMATION_INSTANCE_EVENT_END, NULL);
         //post end event is supported within class only (protected event)
         efl_event_callback_call(eo_obj, EFL_ANIMATION_INSTANCE_EVENT_POST_END,
@@ -110,6 +132,7 @@ _post_end_cb(void *data, const Efl_Event *event)
         return;
      }
 
+next_start:
    pd->start_animator = ecore_animator_add(_start_animator_cb, eo_obj);
 }
 
@@ -153,6 +176,8 @@ _start(Eo *eo_obj, Evas_Object_Animation_Instance_Group_Sequential_Data *pd)
    pd->current_index = 0;
 
    pd->started = EINA_TRUE;
+
+   pd->remaining_repeat_count = efl_animation_instance_repeat_count_get(eo_obj);
 
    efl_event_callback_call(eo_obj, EFL_ANIMATION_INSTANCE_EVENT_START, NULL);
 

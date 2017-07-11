@@ -93,6 +93,9 @@ EOAPI Eina_Bool efl_animation_instance_final_state_keep_get(const Eo *obj);
 EOAPI void efl_animation_instance_duration_set(Eo *obj, double duration);
 EOAPI double efl_animation_instance_duration_get(const Eo *obj);
 
+EOAPI void efl_animation_instance_repeat_count_set(Eo *obj, int count);
+EOAPI int efl_animation_instance_repeat_count_get(const Eo *obj);
+
 EOAPI Eina_Bool efl_animation_instance_is_deleted(Eo *obj);
 
 EOAPI void efl_animation_instance_member_start(Eo *obj);

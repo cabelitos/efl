@@ -193,6 +193,9 @@ _efl_animation_translate_efl_animation_instance_create(Eo *eo_obj,
    double duration = efl_animation_duration_get(eo_obj);
    efl_animation_instance_duration_set(instance, duration);
 
+   int repeat_count = efl_animation_repeat_count_get(eo_obj);
+   efl_animation_instance_repeat_count_set(instance, repeat_count);
+
    if (pd->use_rel_move)
      {
         efl_animation_instance_translate_set(instance,

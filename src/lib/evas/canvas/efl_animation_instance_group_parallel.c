@@ -1,5 +1,6 @@
 #include "evas_common_private.h"
 #include "evas_private.h"
+#include <Ecore.h>
 
 #define MY_CLASS EFL_ANIMATION_INSTANCE_GROUP_PARALLEL_CLASS
 #define MY_CLASS_NAME efl_class_name_get(MY_CLASS)
@@ -21,8 +22,11 @@
 
 struct _Evas_Object_Animation_Instance_Group_Parallel_Data
 {
+   Ecore_Animator *start_animator;
+
    int        animate_inst_count;
    int        animate_inst_index;
+   int        remaining_repeat_count;
 
    Eina_List *finished_inst_list;
 
@@ -77,6 +81,30 @@ _pre_animate_cb(void *data, const Efl_Event *event)
      pd->animate_inst_index = 0;
 }
 
+static Eina_Bool
+_start_animator_cb(void *data)
+{
+   Eo *eo_obj = data;
+
+   EFL_ANIMATION_INSTANCE_GROUP_PARALLEL_DATA_GET(eo_obj, pd);
+
+   Eina_List *instances =
+      efl_animation_instance_group_instances_get(eo_obj);
+   Eina_List *l;
+   Efl_Animation *inst;
+
+   EINA_LIST_FOREACH(instances, l, inst)
+     {
+        //Data should be registered before animation instance starts
+        efl_animation_instance_member_start(inst);
+        pd->animate_inst_count++;
+     }
+
+   pd->start_animator = NULL;
+
+   return ECORE_CALLBACK_CANCEL;
+}
+
 static void
 _post_end_cb(void *data, const Efl_Event *event)
 {
@@ -100,6 +128,30 @@ _post_end_cb(void *data, const Efl_Event *event)
 
    if (pd->animate_inst_count == 0)
      {
+        int repeat_count = efl_animation_instance_repeat_count_get(eo_obj);
+        if (repeat_count > 0)
+          {
+             pd->remaining_repeat_count--;
+             if (pd->remaining_repeat_count >= 0)
+               {
+                  eina_list_free(pd->finished_inst_list);
+                  pd->finished_inst_list = NULL;
+
+                  pd->start_animator = ecore_animator_add(_start_animator_cb,
+                                                          eo_obj);
+                  return;
+               }
+          }
+        else if (repeat_count == -1)
+          {
+             eina_list_free(pd->finished_inst_list);
+             pd->finished_inst_list = NULL;
+
+             pd->start_animator = ecore_animator_add(_start_animator_cb,
+                                                     eo_obj);
+             return;
+          }
+
         efl_event_callback_call(eo_obj, EFL_ANIMATION_INSTANCE_EVENT_END, NULL);
         //post end event is supported within class only (protected event)
         efl_event_callback_call(eo_obj, EFL_ANIMATION_INSTANCE_EVENT_POST_END,
@@ -130,10 +182,15 @@ _member_post_end_cb(void *data, const Efl_Event *event)
 static void
 _start(Eo *eo_obj, Evas_Object_Animation_Instance_Group_Parallel_Data *pd)
 {
+   ecore_animator_del(pd->start_animator);
+   pd->start_animator = NULL;
+
    pd->animate_inst_count = 0;
    pd->animate_inst_index = 0;
 
    pd->started = EINA_TRUE;
+
+   pd->remaining_repeat_count = efl_animation_instance_repeat_count_get(eo_obj);
 
    efl_event_callback_call(eo_obj, EFL_ANIMATION_INSTANCE_EVENT_START, NULL);
 
