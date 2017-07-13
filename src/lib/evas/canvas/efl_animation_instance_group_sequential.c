@@ -24,6 +24,9 @@ struct _Evas_Object_Animation_Instance_Group_Sequential_Data
 {
    Ecore_Animator *start_animator;
 
+   Ecore_Timer    *start_delay_timer;
+   double          start_delay_time;
+
    unsigned int    current_index;
 
    int             remaining_repeat_count;
@@ -168,7 +171,7 @@ _index_animation_start(Eo *eo_obj, int index)
 }
 
 static void
-_start(Eo *eo_obj, Evas_Object_Animation_Instance_Group_Sequential_Data *pd)
+_init_start(Eo *eo_obj, Evas_Object_Animation_Instance_Group_Sequential_Data *pd)
 {
    ecore_animator_del(pd->start_animator);
    pd->start_animator = NULL;
@@ -183,8 +186,30 @@ _start(Eo *eo_obj, Evas_Object_Animation_Instance_Group_Sequential_Data *pd)
    pd->finished_inst_list = NULL;
 
    efl_event_callback_call(eo_obj, EFL_ANIMATION_INSTANCE_EVENT_START, NULL);
+}
+
+static void
+_start(Eo *eo_obj, Evas_Object_Animation_Instance_Group_Sequential_Data *pd)
+{
+   _init_start(eo_obj, pd);
 
    _index_animation_start(eo_obj, pd->current_index);
+}
+
+static Eina_Bool
+_start_delay_timer_cb(void *data)
+{
+   Eo *eo_obj = data;
+   EFL_ANIMATION_INSTANCE_GROUP_SEQUENTIAL_DATA_GET(eo_obj, pd);
+
+   pd->start_delay_timer = NULL;
+
+   if (pd->paused)
+     _init_start(eo_obj, pd);
+   else
+     _start(eo_obj, pd);
+
+   return ECORE_CALLBACK_CANCEL;
 }
 
 EOLIAN static void
@@ -195,7 +220,16 @@ _efl_animation_instance_group_sequential_efl_animation_instance_start(Eo *eo_obj
 
    if (pd->paused) return;
 
+   if (pd->start_delay_timer) return;
+
    pd->is_group_member = EINA_FALSE;
+
+   if (pd->start_delay_time > 0.0)
+     {
+        pd->start_delay_timer = ecore_timer_add(pd->start_delay_time,
+                                                _start_delay_timer_cb, eo_obj);
+        return;
+     }
 
    _start(eo_obj, pd);
 }
@@ -208,9 +242,39 @@ _efl_animation_instance_group_sequential_efl_animation_instance_member_start(Eo 
 
    if (pd->paused) return;
 
+   if (pd->start_delay_timer) return;
+
    pd->is_group_member = EINA_TRUE;
 
+   if (pd->start_delay_time > 0.0)
+     {
+        pd->start_delay_timer = ecore_timer_add(pd->start_delay_time,
+                                                _start_delay_timer_cb, eo_obj);
+        return;
+     }
+
    _start(eo_obj, pd);
+}
+
+EOLIAN static void
+_efl_animation_instance_group_sequential_efl_animation_instance_start_delay_set(Eo *eo_obj,
+                                                                                Evas_Object_Animation_Instance_Group_Sequential_Data *pd,
+                                                                                double delay_time)
+{
+   EFL_ANIMATION_INSTANCE_GROUP_SEQUENTIAL_CHECK_OR_RETURN(eo_obj);
+
+   if (delay_time < 0.0) return;
+
+   pd->start_delay_time = delay_time;
+}
+
+EOLIAN static double
+_efl_animation_instance_group_sequential_efl_animation_instance_start_delay_get(Eo *eo_obj,
+                                                                                Evas_Object_Animation_Instance_Group_Sequential_Data *pd)
+{
+   EFL_ANIMATION_INSTANCE_GROUP_SEQUENTIAL_CHECK_OR_RETURN(eo_obj, 0.0);
+
+   return pd->start_delay_time;
 }
 
 EOLIAN static void
@@ -223,6 +287,8 @@ _efl_animation_instance_group_sequential_efl_animation_instance_pause(Eo *eo_obj
 
    if (pd->paused) return;
    pd->paused = EINA_TRUE;
+
+   if (pd->start_delay_timer) return;
 
    Eina_List *inst_list = efl_animation_instance_group_instances_get(eo_obj);
    Eina_List *l;
@@ -244,6 +310,8 @@ _efl_animation_instance_group_sequential_efl_animation_instance_resume(Eo *eo_ob
 
    if (!pd->paused) return;
    pd->paused = EINA_FALSE;
+
+   if (pd->start_delay_timer) return;
 
    Eina_List *inst_list = efl_animation_instance_group_instances_get(eo_obj);
    Eina_List *l;
@@ -322,6 +390,8 @@ _efl_animation_instance_group_sequential_efl_animation_instance_final_state_show
    EFL_OBJECT_OP_FUNC(efl_animation_instance_member_start, _efl_animation_instance_group_sequential_efl_animation_instance_member_start), \
    EFL_OBJECT_OP_FUNC(efl_animation_instance_final_state_show, _efl_animation_instance_group_sequential_efl_animation_instance_final_state_show), \
    EFL_OBJECT_OP_FUNC(efl_animation_instance_group_instance_add, _efl_animation_instance_group_sequential_efl_animation_instance_group_instance_add), \
-   EFL_OBJECT_OP_FUNC(efl_animation_instance_group_instance_del, _efl_animation_instance_group_sequential_efl_animation_instance_group_instance_del)
+   EFL_OBJECT_OP_FUNC(efl_animation_instance_group_instance_del, _efl_animation_instance_group_sequential_efl_animation_instance_group_instance_del), \
+   EFL_OBJECT_OP_FUNC(efl_animation_instance_start_delay_set, _efl_animation_instance_group_sequential_efl_animation_instance_start_delay_set), \
+   EFL_OBJECT_OP_FUNC(efl_animation_instance_start_delay_get, _efl_animation_instance_group_sequential_efl_animation_instance_start_delay_get)
 
 #include "efl_animation_instance_group_sequential.eo.c"

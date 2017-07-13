@@ -42,6 +42,15 @@ abstract Efl.Animation (Efl.Object)
             count: int; [[Repeat count. -1 repeats animation infinitely.]]
          }
       }
+      @property start_delay {
+         set {
+         }
+         get {
+         }
+         values {
+            delay_time: double; [[Delay time, in seconds, from when the animation starts until the animation is animated]]
+         }
+      }
       instance_create {
          [[Create instance of the animation.]]
          return: Efl.Animation.Instance; [[Created instance of the animation]]

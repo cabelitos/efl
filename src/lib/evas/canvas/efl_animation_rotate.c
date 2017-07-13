@@ -238,6 +238,9 @@ _efl_animation_rotate_efl_animation_instance_create(Eo *eo_obj,
    double duration = efl_animation_duration_get(eo_obj);
    efl_animation_instance_duration_set(instance, duration);
 
+   double start_delay_time = efl_animation_start_delay_get(eo_obj);
+   efl_animation_instance_start_delay_set(instance, start_delay_time);
+
    int repeat_count = efl_animation_repeat_count_get(eo_obj);
    efl_animation_instance_repeat_count_set(instance, repeat_count);
 
