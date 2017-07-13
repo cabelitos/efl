@@ -179,6 +179,9 @@ _start(Eo *eo_obj, Evas_Object_Animation_Instance_Group_Sequential_Data *pd)
 
    pd->remaining_repeat_count = efl_animation_instance_repeat_count_get(eo_obj);
 
+   eina_list_free(pd->finished_inst_list);
+   pd->finished_inst_list = NULL;
+
    efl_event_callback_call(eo_obj, EFL_ANIMATION_INSTANCE_EVENT_START, NULL);
 
    _index_animation_start(eo_obj, pd->current_index);
