@@ -92,7 +92,8 @@ _efl_animation_group_efl_animation_duration_set(Eo *eo_obj,
 {
    EFL_ANIMATION_GROUP_CHECK_OR_RETURN(eo_obj);
 
-   if (duration <= 0.0) duration = 0.0;
+   //If duration is 0, then display the end state of animation
+   if (duration < 0.0) return;
 
    Eina_List *l;
    Efl_Animation *anim;

@@ -77,7 +77,8 @@ _efl_animation_duration_set(Eo *eo_obj,
 {
    EFL_ANIMATION_CHECK_OR_RETURN(eo_obj);
 
-   if (duration <= 0.0) return;
+   //If duration is 0, then display the end state of animation
+   if (duration < 0.0) return;
 
    pd->duration = duration;
 }

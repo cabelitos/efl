@@ -1,5 +1,6 @@
 #include "evas_common_private.h"
 #include "evas_private.h"
+#include <Ecore.h>
 
 #define MY_CLASS EFL_ANIMATION_INSTANCE_GROUP_SEQUENTIAL_CLASS
 #define MY_CLASS_NAME efl_class_name_get(MY_CLASS)
@@ -21,13 +22,15 @@
 
 struct _Evas_Object_Animation_Instance_Group_Sequential_Data
 {
-   unsigned int current_index;
+   Ecore_Animator *start_animator;
 
-   Eina_List   *finished_inst_list;
+   unsigned int    current_index;
 
-   Eina_Bool    started : 1;
-   Eina_Bool    paused : 1;
-   Eina_Bool    is_group_member : 1;
+   Eina_List      *finished_inst_list;
+
+   Eina_Bool       started : 1;
+   Eina_Bool       paused : 1;
+   Eina_Bool       is_group_member : 1;
 };
 
 static void _index_animation_start(Eo *eo_obj, int index);
@@ -58,6 +61,20 @@ _pre_animate_cb(void *data, const Efl_Event *event)
                }
           }
      }
+}
+
+static Eina_Bool
+_start_animator_cb(void *data)
+{
+   Eo *eo_obj = data;
+
+   EFL_ANIMATION_INSTANCE_GROUP_SEQUENTIAL_DATA_GET(eo_obj, pd);
+
+   _index_animation_start(eo_obj, pd->current_index);
+
+   pd->start_animator = NULL;
+
+   return ECORE_CALLBACK_CANCEL;
 }
 
 static void
@@ -93,7 +110,7 @@ _post_end_cb(void *data, const Efl_Event *event)
         return;
      }
 
-   _index_animation_start(eo_obj, pd->current_index);
+   pd->start_animator = ecore_animator_add(_start_animator_cb, eo_obj);
 }
 
 static void
@@ -130,6 +147,9 @@ _index_animation_start(Eo *eo_obj, int index)
 static void
 _start(Eo *eo_obj, Evas_Object_Animation_Instance_Group_Sequential_Data *pd)
 {
+   ecore_animator_del(pd->start_animator);
+   pd->start_animator = NULL;
+
    pd->current_index = 0;
 
    pd->started = EINA_TRUE;

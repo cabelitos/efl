@@ -103,7 +103,8 @@ _efl_animation_instance_duration_set(Eo *eo_obj,
 {
    EFL_ANIMATION_INSTANCE_CHECK_OR_RETURN(eo_obj);
 
-   if (duration <= 0.0) return;
+   //If duration is 0, then show the end state of the animation.
+   if (duration < 0.0) return;
 
    pd->duration = duration;
 }
@@ -193,13 +194,21 @@ _animator_cb(void *data)
    if (pd->cancelled) goto end;
 
    double duration = pd->duration;
-   if (duration <= 0.0) goto end;
+
+   //If duration is 0, then show the end state of the animation.
+   //Therefore, the animator should not be called again.
+   if (duration == 0.0)
+     {
+        ecore_animator_del(pd->animator);
+        pd->animator = NULL;
+     }
 
    pd->time.current = ecore_loop_time_get();
    double elapsed_time = pd->time.current - pd->time.begin;
    double paused_time = pd->paused_time;
 
-   if ((elapsed_time - paused_time) > duration)
+   //If duration is 0, then show the end state of the animation.
+   if ((duration == 0.0) || ((elapsed_time - paused_time) > duration))
      {
         elapsed_time = duration + paused_time;
         pd->progress = 1.0;
@@ -244,8 +253,6 @@ end:
 static void
 _start(Eo *eo_obj, Evas_Object_Animation_Instance_Data *pd)
 {
-   if (pd->duration <= 0.0) return;
-
    //Resume animation if animation is paused
    if (pd->paused)
      {
