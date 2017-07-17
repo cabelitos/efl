@@ -128,6 +128,11 @@ elm_public_eolian_files = \
 	lib/elementary/efl_ui_focus_manager_root_focus.eo \
 	lib/elementary/efl_ui_focus_object.eo \
 	lib/elementary/efl_ui_focus_user.eo \
+	lib/elementary/gesture/efl_ui_gesture.eo \
+	lib/elementary/gesture/efl_ui_gesture_tap.eo \
+	lib/elementary/gesture/efl_ui_gesture_recognizer.eo \
+	lib/elementary/gesture/efl_ui_gesture_recognizer_tap.eo \
+	lib/elementary/gesture/efl_ui_gesture_manager.eo \
 	$(NULL)
 
 # Private classes (not exposed or shipped)
@@ -169,7 +174,8 @@ elm_legacy_eolian_files = \
 	$(NULL)
 
 elm_eolian_type_files = \
-	lib/elementary/elm_general.eot
+	lib/elementary/elm_general.eot \
+	lib/elementary/gesture/efl_ui_gesture_types.eot
 
 elm_public_eolian_c = $(elm_public_eolian_files:%.eo=%.eo.c)
 elm_public_eolian_h = $(elm_public_eolian_files:%.eo=%.eo.h) \
@@ -683,6 +689,11 @@ lib_elementary_libelementary_la_SOURCES = \
 	lib/elementary/efl_ui_focus_manager_sub.c \
 	lib/elementary/efl_ui_focus_object.c \
 	lib/elementary/efl_ui_focus_manager_root_focus.c \
+	lib/elementary/gesture/efl_ui_gesture.c \
+	lib/elementary/gesture/efl_ui_gesture_tap.c \
+	lib/elementary/gesture/efl_ui_gesture_recognizer.c \
+	lib/elementary/gesture/efl_ui_gesture_recognizer_tap.c \
+	lib/elementary/gesture/efl_ui_gesture_manager.c \
 	$(NULL)
 
 

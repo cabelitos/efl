@@ -1,0 +1,10 @@
+enum Efl.Ui.Gesture.State
+{
+   [[ This enum type describes the state of a gesture. ]]
+   legacy: efl_ui_gesture;
+
+   started = 1, [[A continuous gesture has started.]]
+   updated,     [[A gesture continues.]]
+   finished,    [[A gesture has finished.]]
+   canceled,    [[A gesture was canceled.]]
+}

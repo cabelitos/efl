@@ -260,6 +260,7 @@ EAPI extern Elm_Version *elm_version;
 #include <elm_web.h>
 #include <elm_win.h>
 
+
 #ifdef EFL_EO_API_SUPPORT
 # include <efl_config_global.eo.h>
 # include <efl_ui_box.eo.h>
@@ -274,6 +275,12 @@ EAPI extern Elm_Version *elm_version;
 # include <efl_ui_text_editable.eo.h>
 # include <efl_ui_clock.eo.h>
 # include <efl_ui_image_factory.eo.h>
+# include <gesture/efl_ui_gesture_types.eot.h>
+# include <gesture/efl_ui_gesture.eo.h>
+# include <gesture/efl_ui_gesture_tap.eo.h>
+# include <gesture/efl_ui_gesture_recognizer.eo.h>
+# include <gesture/efl_ui_gesture_recognizer_tap.eo.h>
+# include <gesture/efl_ui_gesture_manager.eo.h>
 #endif
 
 /* include deprecated calls last of all */

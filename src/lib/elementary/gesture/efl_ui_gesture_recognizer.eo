@@ -1,0 +1,31 @@
+abstract Efl.Ui.Gesture.Recognizer
+{
+   methods {
+      create @pure_virtual{
+         [[This function is called to create a new Efl.Ui.Gesture object for the given target]]
+
+         params {
+            @in target: Efl.Object; [[The target widget]]
+         }
+         return: Efl.Ui.Gesture; [[Returns the Efl.Ui.Gesture event object]]
+      }
+      recognize @pure_virtual{
+         [[Handles the given event for the watched object, updating the state of the gesture object as required, and returns a suitable result for the current recognition step.]]
+
+         params {
+            @in gesture: Efl.Ui.Gesture; [[The gesture object]]
+            @in watched: Efl.Object; [[The watched object]]
+            @in event: Efl.Input.Pointer; [[The pointer event]]
+
+         }
+         return: Efl.Ui.Gesture; [[Returns the Efl.Ui.Gesture event object]]
+      }
+      reset {
+         [[This function is called by the framework to reset a given gesture.]]
+
+         params {
+            @in gesture: Efl.Ui.Gesture; [[The gesture object]]
+         }
+      }
+   }
+}

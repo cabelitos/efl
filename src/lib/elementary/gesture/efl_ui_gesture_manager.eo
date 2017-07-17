@@ -1,0 +1,26 @@
+import efl_ui_gesture_types;
+
+class Efl.Ui.Gesture.Manager(Efl.Object)
+{
+   methods {
+      register_recognizer {
+         [[This function is called to register a new Efl.Ui.Gesture.Recognizer]]
+
+         params {
+            @in recognizer: Efl.Ui.Gesture.Recognizer; [[The gesture recognizer object]]
+         }
+         return: ptr(const(Efl.Event.Description)); [[Returns the Efl.Event.Description type the recognizer supports]]
+      }
+      unregister_recognizer {
+         [[This function is called to unregister a Efl.Ui.Gesture.Recognizer for Efl.Event.Description type]]
+
+         params {
+            @in type: ptr(const(Efl.Event.Description)); [[The Efl.Event.Description type]]
+         }
+      }
+   }
+   implements {
+      Efl.Object.constructor;
+      Efl.Object.destructor;
+   }
+}

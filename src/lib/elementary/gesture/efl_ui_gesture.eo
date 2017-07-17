@@ -1,0 +1,34 @@
+import efl_ui_gesture_types;
+
+abstract Efl.Ui.Gesture(Efl.Object)
+{
+   methods {
+      @property type {
+         [[This property holds the type of the gesture.]]
+         get {
+         }
+         values {
+            type: ptr(const(Efl.Event.Description)); [[gesture type]]
+         }
+      }
+      @property state {
+         [[This property holds the current state of the gesture.]]
+         get {
+         }
+         values {
+            state: Efl.Ui.Gesture.State; [[gesture state]]
+         }
+      }
+      @property hotspot {
+         [[This property holds the hotspot of the current gesture.]]
+         get {
+         }
+         set {
+         }
+         values {
+            hotspot_x: int; [[x co-ordinate of hotspot]]
+            hotspot_y: int; [[y co-ordinate of hotspot]]
+         }
+      }
+   }
+}

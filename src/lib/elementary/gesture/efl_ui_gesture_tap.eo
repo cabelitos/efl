@@ -1,0 +1,26 @@
+import efl_ui_gesture_types;
+
+class Efl.Ui.Gesture.Tap(Efl.Ui.Gesture)
+{
+   methods {
+      @property position {
+         [[This property holds the type of the gesture.]]
+         set {
+         }
+         get {
+         }
+         values {
+            pos_x: int; [[x position]]
+            pos_y: int; [[y position]]
+         }
+      }
+   }
+   event_prefix: efl_ui;
+   events {
+      gesture_tap; [[Event for tap gesture]]
+   }
+
+   implements {
+      Efl.Object.constructor;
+   }
+}

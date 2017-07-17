@@ -51,7 +51,7 @@ _efl_vg_shape_efl_gfx_color_part_set(Eo *obj, Efl_VG_Shape_Data *pd EINA_UNUSED,
 {
    if (part && !strcmp(part, "stroke"))
      {
-         efl_gfx_shape_stroke_color_set(obj, r, g, b, a);
+        efl_gfx_shape_stroke_color_set(obj, r, g, b, a);
         return EINA_TRUE;
      }
 

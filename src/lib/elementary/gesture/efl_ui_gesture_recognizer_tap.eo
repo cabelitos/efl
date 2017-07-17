@@ -1,0 +1,8 @@
+class Efl.Ui.Gesture.Recognizer.Tap(Efl.Ui.Gesture.Recognizer)
+{
+   implements {
+      Efl.Ui.Gesture.Recognizer.create;
+      Efl.Ui.Gesture.Recognizer.recognize;
+      Efl.Ui.Gesture.Recognizer.reset;
+   }
+}
