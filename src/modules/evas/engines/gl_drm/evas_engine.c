@@ -890,7 +890,7 @@ _native_cb_free(void *image)
 
 /* engine specific override functions */
 static void *
-eng_info(Evas *eo_e EINA_UNUSED)
+eng_info(void)
 {
    Evas_Engine_Info_GL_Drm *info;
 
@@ -905,7 +905,7 @@ eng_info(Evas *eo_e EINA_UNUSED)
 }
 
 static void
-eng_info_free(Evas *eo_e EINA_UNUSED, void *in)
+eng_info_free(void *in)
 {
    Evas_Engine_Info_GL_Drm *info;
 
