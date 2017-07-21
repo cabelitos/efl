@@ -33,6 +33,15 @@ abstract Efl.Animation (Efl.Object)
             duration: double; [[Duration value]]
          }
       }
+      @property repeat_mode {
+         set {
+         }
+         get {
+         }
+         values {
+            mode: Efl.Animation.Repeat_Mode; [[Repeat mode. EFL_ANIMATION_REPEAT_MODE_RESTART restarts animation when the animation ends and EFL_ANIMATION_REPEAT_MODE_REVERSE reverses animation when the animation ends.]]
+         }
+      }
       @property repeat_count {
          set {
          }

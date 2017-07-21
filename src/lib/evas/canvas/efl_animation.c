@@ -30,15 +30,16 @@ struct _Evas_Object_Animation_Data
     * int current_loop;               //Default value is 1
     * Eina_Bool is_reverse;
     */
-   Efl_Canvas_Object *target;
+   Efl_Canvas_Object        *target;
 
-   double             duration;
-   double             start_delay_time;
+   double                    duration;
+   double                    start_delay_time;
 
-   int                repeat_count;
+   Efl_Animation_Repeat_Mode repeat_mode;
+   int                       repeat_count;
 
-   Eina_Bool          deleted : 1;
-   Eina_Bool          state_keep : 1;
+   Eina_Bool                 deleted : 1;
+   Eina_Bool                 state_keep : 1;
 };
 
 static void
@@ -92,6 +93,27 @@ _efl_animation_duration_get(Eo *eo_obj, Evas_Object_Animation_Data *pd)
    EFL_ANIMATION_CHECK_OR_RETURN(eo_obj, 0.0);
 
    return pd->duration;
+}
+
+EOLIAN static void
+_efl_animation_repeat_mode_set(Eo *eo_obj,
+                               Evas_Object_Animation_Data *pd,
+                               Efl_Animation_Repeat_Mode mode)
+{
+   EFL_ANIMATION_CHECK_OR_RETURN(eo_obj);
+
+   if ((mode == EFL_ANIMATION_REPEAT_MODE_RESTART) ||
+       (mode == EFL_ANIMATION_REPEAT_MODE_REVERSE))
+     pd->repeat_mode = mode;
+}
+
+EOLIAN static Efl_Animation_Repeat_Mode
+_efl_animation_repeat_mode_get(Eo *eo_obj, Evas_Object_Animation_Data *pd)
+{
+   EFL_ANIMATION_CHECK_OR_RETURN(eo_obj,
+                                 EFL_ANIMATION_REPEAT_MODE_RESTART);
+
+   return pd->repeat_mode;
 }
 
 EOLIAN static void
@@ -175,6 +197,7 @@ _efl_animation_efl_object_constructor(Eo *eo_obj,
    pd->duration = 0.0;
    pd->start_delay_time = 0.0;
 
+   pd->repeat_mode = EFL_ANIMATION_REPEAT_MODE_RESTART;
    pd->repeat_count = 0;
 
    pd->deleted = EINA_FALSE;

@@ -12,3 +12,11 @@ enum Efl.Animation.Event_Type
    clicked,  [["clicked" event type]]
    count     [[total count of event type]]
 }
+
+enum Efl.Animation.Repeat_Mode
+{
+   [[Animation repeat mode]]
+
+   restart = 0, [[Restart animation when the animation ends.]]
+   reverse      [[Reverse animation when the animation ends.]]
+}
