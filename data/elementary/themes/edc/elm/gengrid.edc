@@ -3,6 +3,20 @@ group { name: "elm/gengrid/item/group_index/default";
 }
 
 group { name: "elm/gengrid/item/default/default";
+   styles {
+      style { name: "gengrid_item_style";
+         base: "font="FN" font_size=10 color=#ffffff style=shadow,bottom shadow_color=#00000080 text_class=grid_item color_class=grid_item left_margin=2 right_margin=2";
+         ENABLED_TEXTBLOCK_TAGS
+      }
+      style { name: "gengrid_item_disabled_style";
+         base: "font="FN" font_size=10 color=#151515ff style=shadow,bottom shadow_color=#ffffff19 text_class=grid_item color_class=grid_item_disabled left_margin=2 right_margin=2";
+         ENABLED_TEXTBLOCK_TAGS
+      }
+      style { name: "gengrid_item_selected_style";
+         base: "font="FN" font_size=10 color=#3399ffff style=glow glow_color=#3399ff18 glow2_color=#3399ff12 text_class=grid_item color_class=grid_item_selected left_margin=2 right_margin=2";
+         ENABLED_TEXTBLOCK_TAGS
+      }
+   }
    data.item: "selectraise" "on";
    data.item: "focusraise" "on";
    data.item: "texts" "elm.text";
@@ -168,7 +182,7 @@ group { name: "elm/gengrid/item/default/default";
       BASEP()
 
       //##//
-      part { name: "elm.text"; type: TEXT; mouse_events: 0;
+      part { name: "elm.text"; type: TEXTBLOCK; mouse_events: 0;
          effect: SHADOW BOTTOM;
          scale: 1;
          description { state: "default" 0.0;
@@ -177,13 +191,13 @@ group { name: "elm/gengrid/item/default/default";
             rel1.offset: 5 -5;
             rel2.relative: 1.0 1.0;
             rel2.offset: -5 -5;
-            color: FN_COL_DEFAULT;
-            color_class: "grid_item";
+            color: TB_COL_PRIMER;
             align: 0.5 1.0;
-            text { font: FN; size: 10;
+            text { style: "gengrid_item_style";
+               font: FN; size: 10;
                min: 0 1;
                align: 0.5 1.0;
-               text_class: "grid_item";
+               ellipsis: 1.0;
             }
          }
          description { state: "selected" 0.0;
@@ -195,18 +209,18 @@ group { name: "elm/gengrid/item/default/default";
             visible: 0;
          }
       }
-      part { name: "label2"; type: TEXT; mouse_events: 0;
+      part { name: "label2"; type: TEXTBLOCK; mouse_events: 0;
          effect: SHADOW BOTTOM;
          scale: 1;
          description { state: "default" 0.0;
             rel1.to: "elm.text";
             rel2.to: "elm.text";
-            color: FN_COL_DISABLE;
-            color_class: "grid_item_disabled";
-            text { font: FN; size: 10;
+            color: TB_COL_PRIMER;
+            text { style: "gengrid_item_disabled_style";
+               font: FN; size: 10;
                text_source: "elm.text";
                align: 0.5 1.0;
-               text_class: "grid_item";
+               ellipsis: 1.0;
             }
             visible: 0;
          }
@@ -219,7 +233,7 @@ group { name: "elm/gengrid/item/default/default";
             visible: 1;
          }
       }
-      part { name: "label3"; type: TEXT; mouse_events: 0;
+      part { name: "label3"; type: TEXTBLOCK; mouse_events: 0;
          effect: GLOW;
          scale: 1;
          description { state: "default" 0.0;
@@ -227,12 +241,12 @@ group { name: "elm/gengrid/item/default/default";
             rel1.to: "elm.text";
             rel2.offset: 1 0;
             rel2.to: "elm.text";
-            color: FN_COL_HIGHLIGHT;
-            color_class: "grid_item_selected";
-            text { font: FN; size: 10;
+            color: TB_COL_PRIMER;
+            text { style: "gengrid_item_selected_style";
+               font: FN; size: 10;
                text_source: "elm.text";
                align: 0.5 1.0;
-               text_class: "grid_item";
+               ellipsis: 1.0;
             }
             visible: 0;
          }
@@ -541,7 +555,7 @@ group { name: "elm/gengrid/item/album-preview/default";
       BASEP()
 
       //##//
-      part { name: "elm.text"; type: TEXT; mouse_events: 0;
+      part { name: "elm.text"; type: TEXTBLOCK; mouse_events: 0;
          effect: SHADOW BOTTOM;
          scale: 1;
          description { state: "default" 0.0;
@@ -553,9 +567,10 @@ group { name: "elm/gengrid/item/album-preview/default";
             color: FN_COL_DEFAULT;
             color_class: "grid_item";
             align: 0.5 1.0;
-            text { font: FN; size: 10;
+            text { style: "gengrid_item_style_ellip";
+               font: FN; size: 10;
                min: 0 1;
-               align: 0.5 1.0;
+               //align: 0.5 1.0;
                text_class: "grid_item";
             }
          }
@@ -568,7 +583,7 @@ group { name: "elm/gengrid/item/album-preview/default";
             visible: 0;
          }
       }
-      part { name: "label2"; type: TEXT; mouse_events: 0;
+      part { name: "label2"; type: TEXTBLOCK; mouse_events: 0;
          effect: SHADOW BOTTOM;
          scale: 1;
          description { state: "default" 0.0;
@@ -576,7 +591,8 @@ group { name: "elm/gengrid/item/album-preview/default";
             rel2.to: "elm.text";
             color: FN_COL_DISABLE;
             color_class: "grid_item_disabled";
-            text { font: FN; size: 10;
+            text { style: "gengrid_item_style_ellip";
+               font: FN; size: 10;
                text_source: "elm.text";
                align: 0.5 1.0;
                text_class: "grid_item";
@@ -592,7 +608,7 @@ group { name: "elm/gengrid/item/album-preview/default";
             visible: 1;
          }
       }
-      part { name: "label3"; type: TEXT; mouse_events: 0;
+      part { name: "label3"; type: TEXTBLOCK; mouse_events: 0;
          effect: GLOW;
          scale: 1;
          description { state: "default" 0.0;
@@ -602,7 +618,8 @@ group { name: "elm/gengrid/item/album-preview/default";
             rel2.to: "elm.text";
             color: FN_COL_HIGHLIGHT;
             color_class: "grid_item_selected";
-            text { font: FN; size: 10;
+            text { style: "gengrid_item_style";
+               font: FN; size: 10;
                text_source: "elm.text";
                align: 0.5 1.0;
                text_class: "grid_item";
@@ -824,7 +841,7 @@ group { name: "elm/gengrid/item/thumb/default";
       }
       
       //##//
-      part { name: "elm.text"; type: TEXT; mouse_events: 0;
+      part { name: "elm.text"; type: TEXTBLOCK; mouse_events: 0;
          effect: SHADOW BOTTOM;
          scale: 1;
          description { state: "default" 0.0;
@@ -836,7 +853,8 @@ group { name: "elm/gengrid/item/thumb/default";
             color: FN_COL_DEFAULT;
             color_class: "grid_item";
             align: 0.5 1.0;
-            text { font: FN; size: 10;
+            text { style: "gengrid_item_style_ellip";
+               font: FN; size: 10;
                min: 0 1;
                align: 0.5 1.0;
                text_class: "grid_item";
@@ -851,7 +869,7 @@ group { name: "elm/gengrid/item/thumb/default";
             visible: 0;
          }
       }
-      part { name: "label2"; type: TEXT; mouse_events: 0;
+      part { name: "label2"; type: TEXTBLOCK; mouse_events: 0;
          effect: SHADOW BOTTOM;
          scale: 1;
          description { state: "default" 0.0;
@@ -859,7 +877,8 @@ group { name: "elm/gengrid/item/thumb/default";
             rel2.to: "elm.text";
             color: FN_COL_DISABLE;
             color_class: "grid_item_disabled";
-            text { font: FN; size: 10;
+            text { style: "gengrid_item_style_ellip";
+               font: FN; size: 10;
                text_source: "elm.text";
                align: 0.5 1.0;
                text_class: "grid_item";
@@ -875,7 +894,7 @@ group { name: "elm/gengrid/item/thumb/default";
             visible: 1;
          }
       }
-      part { name: "label3"; type: TEXT; mouse_events: 0;
+      part { name: "label3"; type: TEXTBLOCK; mouse_events: 0;
          effect: GLOW;
          scale: 1;
          description { state: "default" 0.0;
@@ -885,7 +904,8 @@ group { name: "elm/gengrid/item/thumb/default";
             rel2.to: "elm.text";
             color: FN_COL_HIGHLIGHT;
             color_class: "grid_item_selected";
-            text { font: FN; size: 10;
+            text { style: "gengrid_item_style_ellip";
+               font: FN; size: 10;
                text_source: "elm.text";
                align: 0.5 1.0;
                text_class: "grid_item";
