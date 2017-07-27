@@ -113,8 +113,7 @@ test_evas_mask(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event
                  efl_ui_win_autodel_set(efl_added, 1));
 
    box = efl_add(EFL_UI_BOX_CLASS, win,
-                 efl_orientation_set(efl_added, EFL_ORIENT_DOWN),
-                 efl_gfx_size_hint_weight_set(efl_added, 1.0, 1.0));
+                 efl_orientation_set(efl_added, EFL_ORIENT_DOWN));
    efl_content_set(win, box);
 
    // FIXME: No API to set background as "tile" :(
@@ -125,7 +124,6 @@ test_evas_mask(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event
    snprintf(buf, sizeof(buf), "%s/objects/test_masking.edj", elm_app_data_dir_get());
    ly = efl_add(ELM_LAYOUT_CLASS, win,
                 efl_file_set(efl_added, buf, "masking"),
-                efl_gfx_size_hint_weight_set(efl_added, 1.0, 1.0),
                 efl_gfx_size_hint_align_set(efl_added, -1.0, -1.0));
    efl_pack(box, ly);
 
@@ -133,7 +131,6 @@ test_evas_mask(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event
    o = gl = elm_genlist_add(win);
    elm_genlist_homogeneous_set(gl, 1);
    efl_gfx_size_hint_align_set(o, -1, -1);
-   efl_gfx_size_hint_weight_set(o, 1, 1);
 
    itc = elm_genlist_item_class_new();
    itc->item_style = "default";

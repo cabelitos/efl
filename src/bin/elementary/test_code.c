@@ -73,7 +73,6 @@ _elm_code_test_welcome_setup(Evas_Object *parent)
    line = elm_code_file_line_get(code->file, 4);
    elm_code_line_token_add(line, 18, 20, 1, ELM_CODE_TOKEN_TYPE_MATCH);
  
-   evas_object_size_hint_weight_set(widget, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(widget, EVAS_HINT_FILL, EVAS_HINT_FILL);
 
    elm_code_widget_selection_start(widget, 1, 3);
@@ -111,7 +110,6 @@ _elm_code_test_editor_setup(Evas_Object *parent, Eina_Bool log)
         elm_code_callback_fire(code, &ELM_CODE_EVENT_LINE_LOAD_DONE, line);
      }
 
-   evas_object_size_hint_weight_set(widget, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(widget, EVAS_HINT_FILL, EVAS_HINT_FILL);
 
    return widget;
@@ -142,7 +140,6 @@ _elm_code_test_syntax_setup(Evas_Object *parent)
    _append_line(code->file, "   return 0;");
    _append_line(code->file, "}");
 
-   evas_object_size_hint_weight_set(widget, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(widget, EVAS_HINT_FILL, EVAS_HINT_FILL);
 
    return widget;
@@ -172,7 +169,6 @@ _elm_code_test_diff_inline_setup(Evas_Object *parent)
    code = elm_code_create();
    diff = efl_add(ELM_CODE_WIDGET_CLASS, parent, elm_obj_code_widget_code_set(efl_added, code));
 
-   evas_object_size_hint_weight_set(diff, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(diff, EVAS_HINT_FILL, EVAS_HINT_FILL);
 
    elm_code_parser_standard_add(code, ELM_CODE_PARSER_STANDARD_DIFF);

@@ -167,7 +167,6 @@ test_events(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_in
    elm_win_autodel_set(win, EINA_TRUE);
 
    bx = efl_add(EFL_UI_BOX_CLASS, win, efl_orientation_set(efl_added, EFL_ORIENT_VERTICAL));
-   evas_object_size_hint_weight_set(bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(bx, -1, -1);
    efl_content_set(win, bx);
    td->win = win;
@@ -196,7 +195,6 @@ test_events(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_in
    evas_object_show(bt);
 
    o = efl_add(EFL_CANVAS_RECTANGLE_CLASS, win);
-   evas_object_size_hint_weight_set(o, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(o, -1, -1);
    efl_pack(bx, o);
 
