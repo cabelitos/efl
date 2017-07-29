@@ -1471,6 +1471,29 @@ _edje_part_recalc_single_textblock_scale_range_adjust(Edje_Part_Description_Text
    return scale;
 }
 
+
+/**
+ * @internal
+ * Creates and returns a string of the format: "#RRGGBBAA"
+ * From given rgba integer values.
+ *
+ * @param[in] r The Red value - NOT NULL.
+ * @param[in] g The Green value - NOT NULL.
+ * @param[in] b The Blue value - NOT NULL.
+ * @param[in] a The Alpha value - NOT NULL.
+ */
+char *
+_edje_common_color_to_format(unsigned char r, unsigned char g,
+                            unsigned char b, unsigned char a)
+{
+   char *ret;
+   Eina_Strbuf *str = eina_strbuf_new();
+   eina_strbuf_append_printf(str, "%02x%02x%02x%02x",
+         r, g, b, a);
+   ret = eina_strbuf_string_steal(str);
+   return ret;
+}
+
 /*
  * Legacy function for min/max calculation of textblock part.
  * It can't calculate min/max properly in many cases.
@@ -1856,6 +1879,15 @@ _edje_part_recalc_single_textblock(FLOAT_T sc,
         const char *tmp;
         Eina_List *l;
 
+        const char *font;
+        char *sfont = NULL;
+        int size;
+        Edje_Real_Part *source, *text_source;
+        Eina_Bool inlined_font = EINA_FALSE;
+        const char *font_source = NULL;
+        char *font2 = NULL;
+
+
         if (chosen_desc->text.id_source >= 0)
           {
              Edje_Part_Description_Text *et;
@@ -1892,6 +1924,10 @@ _edje_part_recalc_single_textblock(FLOAT_T sc,
              text = edje_string_get(&chosen_desc->text.text);
              if (ep->typedata.text->text) text = ep->typedata.text->text;
           }
+
+        // assign to variables for easier use in the lines that follow
+        text_source = ep->typedata.text->text_source;
+        source = ep->typedata.text->source;
 
         EINA_LIST_FOREACH(ed->file->styles, l, stl)
           {
@@ -1976,10 +2012,120 @@ _edje_part_recalc_single_textblock(FLOAT_T sc,
              }
           }
 
+        if (source)
+          font = _edje_text_class_font_get(ed,
+                _edje_real_part_text_source_description_get(ep,
+                   &source), &size, &sfont);
+        else
+          font = _edje_text_class_font_get(ed, chosen_desc, &size, &sfont);
+
+        if (!font) font = "";
+
+        if (text_source)
+          {
+             if (text_source->typedata.text->text)
+               {
+                  text = text_source->typedata.text->text;
+               }
+          }
+        else
+          {
+             if (ep->typedata.text->text) text = ep->typedata.text->text;
+          }
+
+        if (source)
+          {
+             if (source->typedata.text->font) font = source->typedata.text->font;
+             if (source->typedata.text->size > 0) size = source->typedata.text->size;
+          }
+        else
+          {
+             if (ep->typedata.text->font) font = ep->typedata.text->font;
+             if (ep->typedata.text->size > 0) size = ep->typedata.text->size;
+          }
+        if (!text) text = "";
+
+        if (ed->file->fonts)
+          {
+             Edje_Font_Directory_Entry *fnt;
+
+             fnt = eina_hash_find(ed->file->fonts, font);
+
+             if (fnt)
+               {
+                  size_t len = strlen(font) + sizeof("edje/fonts/") + 1;
+                  font2 = alloca(len);
+                  sprintf(font2, "edje/fonts/%s", font);
+                  font = font2;
+                  inlined_font = 1;
+                  font2 = NULL; // so it is not freed at the end of the function
+               }
+          }
+        if (inlined_font)
+          {
+             font_source = ed->path;
+          }
+
+        if ((_edje_fontset_append) && (font))
+          {
+             font2 = malloc(strlen(font) + 1 + strlen(_edje_fontset_append) + 1);
+             if (font2)
+               {
+                  strcpy(font2, font);
+                  strcat(font2, ",");
+                  strcat(font2, _edje_fontset_append);
+                  font = font2; //font2 needs to be freed at the end of the
+                                // function.
+               }
+          }
         if (stl)
           {
+             // Set main style
+             Eina_Strbuf *sstr;
+             FLOAT_T align_x = params->type.text->align.x;
+             FLOAT_T ellip = params->type.text->ellipsis;
+
              if (evas_object_textblock_style_get(ep->object) != stl->style)
                evas_object_textblock_style_set(ep->object, stl->style);
+
+             // Overlay with text parameters using one more style
+             if (font || (size > 0) || font_source)
+                {
+                   sstr = eina_strbuf_new();
+                   eina_strbuf_append(sstr, "DEFAULT='");
+
+                   if (font && *font)
+                     {
+                        eina_strbuf_append_printf(sstr,
+                              "font=%s ", font);
+                     }
+
+                   if (size > 0)
+                     {
+                        eina_strbuf_append_printf(sstr,
+                              "font_size=%d ", size);
+                     }
+
+                   if (font_source)
+                     {
+                        eina_strbuf_append_printf(sstr,
+                              "font_source=%s ", font_source);
+                     }
+                   if (align_x >= FROM_INT(0))
+                     {
+                        eina_strbuf_append_printf(sstr,
+                              "align=%f ", align_x);
+                     }
+                   if (ellip >= FROM_INT(0.1))
+                     {
+                        eina_strbuf_append_printf(sstr,
+                              "ellipsis=%f ", ellip);
+                     }
+                   eina_strbuf_append(sstr, "'");
+                   efl_canvas_text_style_set(ep->object, "__edje_text",
+                         eina_strbuf_string_get(sstr));
+                   eina_strbuf_free(sstr);
+                }
              // FIXME: need to account for editing
              if (ep->part->entry_mode > EDJE_ENTRY_EDIT_MODE_NONE)
                {
@@ -2008,8 +2154,16 @@ _edje_part_recalc_single_textblock(FLOAT_T sc,
                }
           }
 
+        if (font2) free(font2);
+        // This probably needs to be freed here and not before, as
+        // _edje_text_class_font_get is passed with this variable as names it
+        // 'free_later' (read the mentioned function to get the general idea).
+        if (sfont) free(sfont);
+
+
         evas_object_textblock_valign_set(ep->object, TO_DOUBLE(chosen_desc->text.align.y));
      }
+
 }
 
 static void
