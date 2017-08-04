@@ -25,7 +25,7 @@ docker build -f .ci/Dockerfile-Fedora26 .
 
 
 TODO
-- Create docker images with needed deps installed
+- Create docker images with needed deps installed?
 - Create a new docker image after every efl build with efl installed to be used by E, terminology..
 - Create Arch docker build
 - Create Gentoo docker build
@@ -33,6 +33,10 @@ TODO
 - Fix OpenSuse build (to long arguments)
 - Create docker build for all extra options
 - Create docker build for wayland options
+- Create builds for rage and terminology
+- Create builds for the stable branches on efl, E, terminology
+- Matrix builds for clang and gcc
+- 32bit builds with multilib?
 - Windows builds with this appveyor CI native windows
 - Windows support withg mingw setup on Linux
 - ABI checker builds
