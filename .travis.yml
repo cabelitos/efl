@@ -36,6 +36,7 @@ before_install:
 #  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull mageia:6; fi
 
 #  - env: DISTRO=Opensuse422
+#  - env: DISTRO=Opensuse423
 #  - env: DISTRO=Mageia6
 matrix:
   include:
@@ -45,7 +46,6 @@ matrix:
   - env: DISTRO=Fedora26
   - env: DISTRO=Fedora26-wayland
   - env: DISTRO=Fedora26-misc
-  - env: DISTRO=Opensuse423
   - env: DISTRO=Debian89
   - env: DISTRO=Debian91
 
