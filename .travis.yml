@@ -33,7 +33,10 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull debian:8.9; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull debian:9.1; fi
 
+#  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull mageia:6; fi
+
 #  - env: DISTRO=Opensuse422
+#  - env: DISTRO=Mageia6
 matrix:
   include:
   - env: DISTRO=Ubuntu1604

@@ -11,7 +11,7 @@ We are using the OSX support of Travis CI to build EFL on OSX.
 Semaphore CI:
 -------------
 The service uses Ubuntu 14.04 LTS as his base so all our builds are run within docker on it. They do
-not offer a config file in tthe git repo to be parsed which means our configuration sits in their
+not offer a config file in the git repo to be parsed which means our configuration sits in their
 web ui.
 
 
@@ -28,6 +28,8 @@ TODO
 - Create docker images with needed deps installed
 - Create a new docker image after every efl build with efl installed to be used by E, terminology..
 - Create Arch docker build
+- Create Gentoo docker build
+- Create Mageia docker build
 - Fix OpenSuse build (to long arguments)
 - Create docker build for all extra options
 - Create docker build for wayland options
