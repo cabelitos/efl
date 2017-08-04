@@ -43,6 +43,8 @@ matrix:
   - env: DISTRO=Ubuntu1704
   - env: DISTRO=Fedora25
   - env: DISTRO=Fedora26
+  - env: DISTRO=Fedora26-wayland
+  - env: DISTRO=Fedora26-misc
   - env: DISTRO=Opensuse423
   - env: DISTRO=Debian89
   - env: DISTRO=Debian91
