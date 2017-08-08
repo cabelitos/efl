@@ -75,13 +75,6 @@ matrix:
 
 script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]] && [[ "$DISTRO" != "" ]]; then docker build -f  .ci/Dockerfile-$DISTRO . ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then mkdir -p ~/Library/LaunchAgents; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ln -sfv /usr/local/opt/d-bus/*.plist ~/Library/LaunchAgents; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then launchctl load ~/Library/LaunchAgents/org.freedesktop.dbus-session.plist; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PATH="$(brew --prefix gettext)/bin:$PATH"; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export COPTS="--with-crypto=none --disable-pulseaudio --disable-cxx-bindings"; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then  ./autogen.sh $COPTS; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then  make -j 10; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then  make -j 10 examples; fi
-#
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then .ci/ci-osx-build.sh ; fi
+
 # TRAVIS_EVENT_TYPE==cron as test for nightly builds
