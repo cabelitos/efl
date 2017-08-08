@@ -34,10 +34,8 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull debian:9.1; fi
 
 #  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull mageia:6; fi
-
-#  - env: DISTRO=Opensuse422
-#  - env: DISTRO=Opensuse423
 #  - env: DISTRO=Mageia6
+
 matrix:
   include:
   - env: DISTRO=Ubuntu1604
@@ -50,6 +48,11 @@ matrix:
   - env: DISTRO=Debian91
   - os: osx
   - compiler: clang
+  allow_failures:
+  - env: DISTRO=Opensuse422
+  - env: DISTRO=Opensuse423
+  fast_finish: true
+
 
 #  - os: osx
 #    osx_image: xcode8.3
