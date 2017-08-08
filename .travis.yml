@@ -49,6 +49,7 @@ matrix:
   - env: DISTRO=Debian89
   - env: DISTRO=Debian91
   - os: osx
+  - compiler: clang
 
 #  - os: osx
 #    osx_image: xcode8.3
