@@ -31,8 +31,6 @@ TODO
 - Create Gentoo docker build
 - Create Mageia docker build
 - Fix OpenSuse build (to long arguments)
-- Create docker build for all extra options
-- Create docker build for wayland options
 - Create builds for rage and terminology
 - Create builds for the stable branches on efl, E, terminology
 - Matrix builds for clang and gcc
@@ -43,5 +41,4 @@ TODO
 - Coverage builds
 - Usage of shippable parallel to Travis?
 - Usage of a Jenkinsfile to use our own infra from this?
-
 - Add CircleCI service (ask them for a open source with osx plan)
