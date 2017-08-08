@@ -103,3 +103,78 @@ test_panes(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_inf
    evas_object_resize(win, 320, 400);
    evas_object_show(win);
 }
+
+void
+test_panes_minsize(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   Evas_Object *win, *bg, *panes, *panes_h, *bt;
+   static double vbar_size = 0.0;
+   static double hbar_size = 0.0;
+
+   win = elm_win_add(NULL, "panes", ELM_WIN_BASIC);
+   elm_win_title_set(win, "Panes");
+   elm_win_autodel_set(win, EINA_TRUE);
+
+   bg = elm_bg_add(win);
+   evas_object_size_hint_weight_set(bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_win_resize_object_add(win, bg);
+   elm_win_focus_highlight_enabled_set(win, EINA_TRUE);
+   evas_object_show(bg);
+
+   panes = elm_panes_add(win);
+   evas_object_size_hint_weight_set(panes, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   
+   //elm_panes_content_left_min_size_set(panes, 100);
+   elm_panes_content_left_size_set(panes, 0.7);
+   elm_win_resize_object_add(win, panes);
+   evas_object_show(panes);
+
+   evas_object_smart_callback_add(panes, "clicked", _clicked, panes);
+   evas_object_smart_callback_add(panes, "clicked,double", _clicked_double, &vbar_size);
+
+   evas_object_smart_callback_add(panes, "press", _press, panes);
+   evas_object_smart_callback_add(panes, "unpress", _unpress, panes);
+
+   // add left button
+   bt = elm_button_add(win);
+   elm_object_text_set(bt, "Left - min size 100 - size 70%");
+   evas_object_show(bt);
+   efl_gfx_size_hint_min_set(bt, 110, 110);
+   elm_object_part_content_set(panes, "left", bt);
+
+   // add panes
+   panes_h = elm_panes_add(win);
+   //efl_gfx_size_hint_min_set(panes_h, 100, 110);
+   efl_orientation_set(panes_h, EFL_ORIENT_HORIZONTAL);
+   //efl_gfx_size_hint_min_set(efl_part(panes_h, "second"), 100, 100);
+   //elm_panes_content_right_min_size_set(panes_h, 100);
+   //elm_panes_content_right_size_set(panes_h, 0.3);
+   evas_object_show(panes_h);
+
+   evas_object_smart_callback_add(panes_h, "clicked", _clicked, panes_h);
+   evas_object_smart_callback_add(panes_h, "clicked,double", _clicked_double, &hbar_size);
+
+   evas_object_smart_callback_add(panes_h, "press", _press, panes_h);
+   evas_object_smart_callback_add(panes_h, "unpress", _unpress, panes_h);
+  
+
+   // add up button
+   bt = elm_button_add(win);
+   elm_object_text_set(bt, "Up");
+   evas_object_show(bt);
+   efl_gfx_size_hint_min_set(bt, 300, 100);
+   elm_object_part_content_set(panes_h, "top", bt);
+
+   // add down button
+   bt = elm_button_add(win);
+   elm_object_text_set(bt, "Down - min size 100 size 30%");
+   evas_object_show(bt);
+   efl_gfx_size_hint_min_set(bt, 200, 140);
+   elm_object_part_content_set(panes_h, "bottom", bt);
+
+    elm_object_part_content_set(panes, "right", panes_h);
+
+   evas_object_resize(win, 320, 400);
+   evas_object_show(win);
+}
+

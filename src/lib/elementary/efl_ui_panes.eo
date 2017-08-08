@@ -120,6 +120,9 @@ class Efl.Ui.Panes (Elm.Layout, Efl.Orientation,
       Elm.Widget.focus_next_manager_is;
       Elm.Widget.focus_next;
       Elm.Widget.theme_apply;
+     // Efl.Canvas.Group.group_calculate;
+      Elm.Layout.sizing_eval;
+      Efl.Part.part;  
       Efl.Orientation.orientation { get; set; }
    }
    events {
