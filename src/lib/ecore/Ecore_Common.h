@@ -3178,6 +3178,19 @@ typedef void (*Ecore_Thread_Future_Cb)(const void *data, Eo *promise, Ecore_Thre
 
 EAPI Efl_Future *ecore_thread_future_run(Ecore_Thread_Future_Cb heavy, const void *data, Eina_Free_Cb free_cb);
 
+
+/**
+ * Gets the Eina_Future_Scheduler for a given mainloop.
+ *
+ * The Eina_Future_Scheduler returned by this function
+ * should be used for creating promises (eina_promise_new())
+ * so then can properly schedule resolve/reject events.
+ *
+ * @param eo The mainloop object.
+ * @return An Eina_Future_Scheduler or @c NULL on error.
+ */
+EAPI Eina_Future_Scheduler *efl_loop_future_scheduler_get(Eo *eo);
+
 #endif
 
 #ifdef __cplusplus
