@@ -48,9 +48,8 @@ matrix:
   - env: DISTRO=Fedora26-misc
   - env: DISTRO=Debian89
   - env: DISTRO=Debian91
+  - os: osx
 
-#  - os: osx
-#    osx_image: xcode7.3
 #  - os: osx
 #    osx_image: xcode8.3
 
