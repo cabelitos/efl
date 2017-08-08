@@ -15,15 +15,15 @@ services:
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install gettext check bullet dbus fontconfig freetype fribidi gst-plugins-good gstreamer luajit openssl webp libsndfile glib libspectre libraw librsvg poppler lz4; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull ubuntu:16.04; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull ubuntu:17.04; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull fedora:25; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull fedora:26; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull opensuse:42.2; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull opensuse:42.3; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull debian:8.9; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull debian:9.1; fi
 
+#  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull ubuntu:16.04; fi
+#  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull ubuntu:17.04; fi
+#  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull fedora:25; fi
+#  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull fedora:26; fi
+#  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull opensuse:42.2; fi
+#  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull opensuse:42.3; fi
+#  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull debian:8.9; fi
+#  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull debian:9.1; fi
 #  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then docker pull mageia:6; fi
 #  - env: DISTRO=Mageia6
 
