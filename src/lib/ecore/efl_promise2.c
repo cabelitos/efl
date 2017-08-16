@@ -77,7 +77,7 @@
 
 struct _Efl_Promise2 {
    Efl_Future2 *future;
-   Eina_Free_Cb cancel;
+   Efl_Promise2_Cancel_Cb cancel;
    const void *data;
 };
 
@@ -267,7 +267,7 @@ _efl_promise2_cancel(Efl_Promise2 *p)
 {
    DBG("Cancelling promise: %p, data: %p, future: %p", p, p->data, p->future);
    _efl_promise2_unlink(p);
-   p->cancel((void *)p->data);
+   p->cancel((void *)p->data, p);
    eina_mempool_free(_promise_mp, p);
 }
 
@@ -532,7 +532,7 @@ _future_proxy(void *data, const Eina_Value v) {
 }
 
 static void
-_proxy_cancel(void *data EINA_UNUSED)
+_proxy_cancel(void *data EINA_UNUSED, const Efl_Promise2 *dead_ptr EINA_UNUSED)
 {
 }
 
@@ -554,7 +554,7 @@ efl_future2_as_value(Efl_Future2 *f)
 }
 
 EAPI Efl_Promise2 *
-efl_promise2_new(Eina_Free_Cb cancel_cb, const void *data)
+efl_promise2_new(Efl_Promise2_Cancel_Cb cancel_cb, const void *data)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL(cancel_cb, NULL);
    Efl_Promise2 *p = eina_mempool_calloc(_promise_mp, sizeof(Efl_Promise2));
@@ -729,4 +729,11 @@ EAPI Efl_Future2_Desc
 efl_future2_cb_convert_to(const Eina_Value_Type *type)
 {
    return (Efl_Future2_Desc){.cb = _efl_future2_cb_convert_to, .data = type};
+}
+
+EAPI void *
+efl_promise2_data_get(const Efl_Promise2 *p)
+{
+   EINA_SAFETY_ON_NULL_RETURN_VAL(p, NULL);
+   return (void *)p->data;
 }

@@ -14,7 +14,7 @@
 
 #define VALUE_TYPE_CHECK(_v, _type)                     \
   do {                                                  \
-     ck_assert_ptr_eq(v.type, _type);                   \
+     ck_assert_ptr_eq(_v.type, _type);                  \
 } while(0)
 
 #define ERROR_CHECK(_v, _errno)                                 \
@@ -33,7 +33,7 @@ typedef struct _PromiseCtx {
 } PromiseCtx;
 
 static void
-_cancel(void *data)
+_cancel(void *data, const Efl_Promise2 *dead_ptr EINA_UNUSED)
 {
    PromiseCtx *ctx = data;
    if (ctx->t) ecore_timer_del(ctx->t);
@@ -42,7 +42,7 @@ _cancel(void *data)
 }
 
 static void
-_promise_cancel_test(void *data)
+_promise_cancel_test(void *data, const Efl_Promise2 *dead_ptr EINA_UNUSED)
 {
    Eina_Bool *cancel_called = data;
    *cancel_called = EINA_TRUE;
@@ -206,12 +206,19 @@ _inner_fail(void *data, const Eina_Value v)
    return v;
 }
 
+static void
+_inner_promise_cancel(void *data EINA_UNUSED, const Efl_Promise2 *dead_ptr EINA_UNUSED)
+{
+   //This must never happen...
+   fail_if(EINA_FALSE);
+}
+
 static Eina_Value
 _future_promise_create(void *data, const Eina_Value v EINA_UNUSED)
 {
    Efl_Promise2 *p;
 
-   p = efl_promise2_new(_dummy_cancel, NULL);
+   p = efl_promise2_new(_inner_promise_cancel, NULL);
    fail_if(!p);
    efl_future2_then(_future_get(EINA_FALSE, EINA_FALSE),
                     data ? _inner_fail : _inner_resolve,

@@ -46,7 +46,7 @@ _timeout(void *data)
 }
 
 static void
-_promise_cancel(void *data)
+_promise_cancel(void *data, const Efl_Promise2 *dead EINA_UNUSED)
 {
    Ctx *ctx = data;
    if (ctx->timer)
@@ -208,7 +208,7 @@ _delayed_reject(void *data, const Eina_Value v)
 }
 
 static void
-_inner_promise_cancel(void *data)
+_inner_promise_cancel(void *data, const Efl_Promise2 *dead EINA_UNUSED)
 {
    Inner_Promise_Ctx *ctx = data;
    efl_future2_cancel(ctx->future);
