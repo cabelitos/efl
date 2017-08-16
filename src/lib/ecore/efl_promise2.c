@@ -740,3 +740,56 @@ efl_promise2_data_get(const Efl_Promise2 *p)
    EINA_SAFETY_ON_NULL_RETURN_VAL(p, NULL);
    return (void *)p->data;
 }
+
+static Eina_Value
+_efl_future2_cb_easy_error(const Efl_Future2_Cb_Easy_Desc *d, const Eina_Value value)
+{
+   Eina_Error err;
+   if (!d->error) return value;
+   eina_value_get(&value, &err);
+   return d->error((void *)d->data, err);
+}
+
+static Eina_Value
+_efl_future2_cb_easy(void *data, const Eina_Value value,
+                     const Efl_Future2 *dead_future)
+{
+    Efl_Future2_Cb_Easy_Desc *d = data;
+    Eina_Value ret = { 0 };
+    if (!d)
+      {
+         if (eina_value_setup(&ret, EINA_VALUE_TYPE_ERROR)) eina_value_set(&ret, ENOMEM);
+         return ret;
+      }
+
+    if (value.type == EINA_VALUE_TYPE_ERROR) ret = _efl_future2_cb_easy_error(d, value);
+    else if (!d->success) ret = value;  /* pass thru */
+    else
+      {
+         if ((!d->success_type) || (d->success_type && value.type == d->success_type))
+           ret = d->success((void *)d->data, value);
+         else
+           {
+              Eina_Value error = { 0 };
+              ERR("Future %p, success cb: %p data: %p, expected success_type %p (%s), got %p (%s)",
+                  dead_future, d->success, d->data,
+                  d->success_type, eina_value_type_name_get(d->success_type),
+                  value.type, value.type ? eina_value_type_name_get(value.type) : NULL);
+              if (eina_value_setup(&error, EINA_VALUE_TYPE_ERROR)) eina_value_set(&error, EINVAL);
+              ret = _efl_future2_cb_easy_error(d, error);
+           }
+      }
+    if (d->free) d->free((void *)d->data, dead_future);
+    free(d);
+    return ret;
+}
+
+EAPI Efl_Future2_Desc
+efl_future2_cb_easy_from_desc(const Efl_Future2_Cb_Easy_Desc desc)
+{
+   Efl_Future2_Cb_Easy_Desc *d = calloc(1, sizeof(Efl_Future2_Cb_Easy_Desc));
+   EINA_SAFETY_ON_NULL_GOTO(d, end);
+   *d = desc;
+ end:
+   return (Efl_Future2_Desc){ .cb = _efl_future2_cb_easy, .data = d };
+}

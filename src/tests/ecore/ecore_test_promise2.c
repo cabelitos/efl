@@ -32,6 +32,13 @@ typedef struct _PromiseCtx {
    Eina_Bool use_int;
 } PromiseCtx;
 
+typedef struct _Easy_Ctx {
+   Eina_Bool success_called;
+   Eina_Bool error_called;
+   Eina_Bool free_called;
+   Eina_Bool stop_loop;
+} Easy_Ctx;
+
 static void
 _cancel(void *data, const Efl_Promise2 *dead_ptr EINA_UNUSED)
 {
@@ -268,6 +275,41 @@ _convert_check(void *data EINA_UNUSED, const Eina_Value v, const Efl_Future2 *de
    ecore_main_loop_quit();
    return v;
 }
+
+static Eina_Value
+_easy_success(void *data, const Eina_Value v)
+{
+   Easy_Ctx *ctx = data;
+   const char *msg;
+
+   ctx->success_called = EINA_TRUE;
+   VALUE_TYPE_CHECK(v, EINA_VALUE_TYPE_STRING);
+   fail_if(!eina_value_get(&v, &msg));
+   ck_assert_str_eq(DEFAULT_MSG, msg);
+   return v;
+}
+
+static Eina_Value
+_easy_error(void *data, const Eina_Error err)
+{
+   Eina_Value v;
+   Easy_Ctx *ctx = data;
+   eina_value_setup(&v, EINA_VALUE_TYPE_ERROR);
+   eina_value_set(&v, err);
+   ctx->error_called = EINA_TRUE;
+   fail_if(err != EINVAL);
+   return v;
+}
+
+static void
+_easy_free(void *data, const Efl_Future2 *dead_future EINA_UNUSED)
+{
+   Easy_Ctx *ctx = data;
+   ctx->free_called = EINA_TRUE;
+   if (ctx->stop_loop)
+     ecore_main_loop_quit();
+}
+
 START_TEST(efl_test_promise_future_success)
 {
    _simple_test(EINA_FALSE);
@@ -400,6 +442,40 @@ START_TEST(efl_test_promise_future_convert)
 
 }
 END_TEST
+
+START_TEST(efl_test_promise_future_easy)
+{
+   Efl_Future2 *f;
+   Easy_Ctx easy1 = { 0 };
+   Easy_Ctx easy2 = { 0 };
+   Easy_Ctx easy3 = { 0 };
+
+   easy3.stop_loop = EINA_TRUE;
+   fail_if(!ecore_init());
+   f = efl_future2_chain(_future_get(EINA_FALSE, EINA_FALSE),
+                         efl_future2_cb_easy(_easy_success,
+                                             _easy_error,
+                                             _easy_free,
+                                             EINA_VALUE_TYPE_STRING,
+                                             &easy1),
+                         efl_future2_cb_easy(_easy_success,
+                                             _easy_error,
+                                             _easy_free,
+                                             NULL,
+                                             &easy2),
+                         efl_future2_cb_easy(_easy_success,
+                                             _easy_error,
+                                             _easy_free,
+                                             EINA_VALUE_TYPE_INT,
+                                             &easy3));
+   fail_if(!f);
+   ecore_main_loop_begin();
+   ecore_shutdown();
+   fail_if(!(easy1.success_called && !easy1.error_called && easy1.free_called));
+   fail_if(!(easy2.success_called && !easy2.error_called && easy2.free_called));
+   fail_if(!(!easy3.success_called && easy3.error_called && easy3.free_called));
+}
+END_TEST
 void ecore_test_ecore_promise2(TCase *tc)
 {
    tcase_add_test(tc, efl_test_promise_future_success);
@@ -411,4 +487,5 @@ void ecore_test_ecore_promise2(TCase *tc)
    tcase_add_test(tc, efl_test_promise_future_inner_promise);
    tcase_add_test(tc, efl_test_promise_future_inner_promise_fail);
    tcase_add_test(tc, efl_test_promise_future_convert);
+   tcase_add_test(tc, efl_test_promise_future_easy);
 }
