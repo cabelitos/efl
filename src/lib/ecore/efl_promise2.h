@@ -28,6 +28,7 @@ EAPI Efl_Future2 *efl_future2_new(Efl_Promise2 *p);
 EAPI Efl_Future2 *efl_future2_then_from_desc(Efl_Future2 *prev, const Efl_Future2_Desc desc);
 EAPI Efl_Future2 *efl_future2_chain_array(Efl_Future2 *prev, const Efl_Future2_Desc descs[]);
 EAPI Efl_Future2_Desc efl_future2_cb_console(const char *prefix, const char *suffix);
+EAPI Efl_Future2_Desc efl_future2_cb_convert_to(const Eina_Value_Type *type);
 
 #ifndef __cplusplus
 #define efl_future2_chain(_prev, ...) efl_future2_chain_array(_prev, (Efl_Future2_Desc[]){__VA_ARGS__, {.cb = NULL, .data = NULL}})

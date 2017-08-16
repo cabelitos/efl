@@ -251,6 +251,16 @@ _inner_promise_test(Eina_Bool fail)
 
 }
 
+static Eina_Value
+_convert_check(void *data EINA_UNUSED, const Eina_Value v, const Efl_Future2 *dead_future EINA_UNUSED)
+{
+   const char *number;
+   VALUE_TYPE_CHECK(v, EINA_VALUE_TYPE_STRING);
+   fail_if(!eina_value_get(&v, &number));
+   ck_assert_str_eq("0", number);
+   ecore_main_loop_quit();
+   return v;
+}
 START_TEST(efl_test_promise_future_success)
 {
    _simple_test(EINA_FALSE);
@@ -369,6 +379,20 @@ START_TEST(efl_test_promise_future_implicit_cancel)
 }
 END_TEST
 
+START_TEST(efl_test_promise_future_convert)
+{
+   Efl_Future2 *f;
+
+   fail_if(!ecore_init());
+   f = efl_future2_chain(_future_get(EINA_FALSE, EINA_TRUE),
+                         efl_future2_cb_convert_to(EINA_VALUE_TYPE_STRING),
+                         { .cb = _convert_check, .data = NULL });
+   fail_if(!f);
+   ecore_main_loop_begin();
+   ecore_shutdown();
+
+}
+END_TEST
 void ecore_test_ecore_promise2(TCase *tc)
 {
    tcase_add_test(tc, efl_test_promise_future_success);
@@ -379,4 +403,5 @@ void ecore_test_ecore_promise2(TCase *tc)
    tcase_add_test(tc, efl_test_promise_future_implicit_cancel);
    tcase_add_test(tc, efl_test_promise_future_inner_promise);
    tcase_add_test(tc, efl_test_promise_future_inner_promise_fail);
+   tcase_add_test(tc, efl_test_promise_future_convert);
 }

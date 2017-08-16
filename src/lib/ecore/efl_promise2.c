@@ -715,3 +715,18 @@ efl_future2_cb_console(const char *prefix, const char *suffix)
  exit:
    return desc;
 }
+
+static Eina_Value
+_efl_future2_cb_convert_to(void *data, const Eina_Value src)
+{
+    const Eina_Value_Type *type = data;
+    Eina_Value dst = { 0 };
+    if (type && eina_value_setup(&dst, type)) eina_value_convert(&src, &dst);
+    return dst;
+}
+
+EAPI Efl_Future2_Desc
+efl_future2_cb_convert_to(const Eina_Value_Type *type)
+{
+   return (Efl_Future2_Desc){.cb = _efl_future2_cb_convert_to, .data = type};
+}
