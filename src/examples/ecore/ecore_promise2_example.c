@@ -72,7 +72,7 @@ _simple_future_get(Eina_Bool should_fail, Eina_Bool with_msg)
 }
 
 static Eina_Value
-_simple_ok(void *data EINA_UNUSED, const Eina_Value v)
+_simple_ok(void *data EINA_UNUSED, const Eina_Value v, const Efl_Future2 *dead_future EINA_UNUSED)
 {
    VALUE_TYPE_CHECK(v, EINA_VALUE_TYPE_STRING);
    return v;
@@ -80,7 +80,7 @@ _simple_ok(void *data EINA_UNUSED, const Eina_Value v)
 
 
 static Eina_Value
-_alternate_error_cb(void *data, const Eina_Value v)
+_alternate_error_cb(void *data, const Eina_Value v, const Efl_Future2 *dead_future EINA_UNUSED)
 {
    Eina_Bool *should_fail = data;
    Eina_Value new_v = { 0 };
@@ -118,7 +118,7 @@ _alternate_error(void)
 }
 
 static Eina_Value
-_simple_err(void *data EINA_UNUSED, const Eina_Value v)
+_simple_err(void *data EINA_UNUSED, const Eina_Value v, const Efl_Future2 *dead_future EINA_UNUSED)
 {
    VALUE_TYPE_CHECK(v, EINA_VALUE_TYPE_ERROR);
    return v;
@@ -136,7 +136,7 @@ _simple(void)
 }
 
 static Eina_Value
-_chain_no_errors_cb(void *data EINA_UNUSED, const Eina_Value v)
+_chain_no_errors_cb(void *data EINA_UNUSED, const Eina_Value v, const Efl_Future2 *dead_future EINA_UNUSED)
 {
    int count;
    Eina_Value new_v;
@@ -169,7 +169,7 @@ _chain_no_errors(void)
 }
 
 static Eina_Value
-_chain_with_error_cb(void *data EINA_UNUSED, const Eina_Value v EINA_UNUSED)
+_chain_with_error_cb(void *data EINA_UNUSED, const Eina_Value v EINA_UNUSED, const Efl_Future2 *dead_future EINA_UNUSED)
 {
    Eina_Value err;
    eina_value_setup(&err, EINA_VALUE_TYPE_ERROR);
@@ -187,7 +187,7 @@ _chain_with_error(void)
 }
 
 static Eina_Value
-_delayed_resolve(void *data, const Eina_Value v)
+_delayed_resolve(void *data, const Eina_Value v, const Efl_Future2 *dead_future EINA_UNUSED)
 {
    Inner_Promise_Ctx *ctx = data;
    Eina_Value new_v;
@@ -199,7 +199,7 @@ _delayed_resolve(void *data, const Eina_Value v)
 }
 
 static Eina_Value
-_delayed_reject(void *data, const Eina_Value v)
+_delayed_reject(void *data, const Eina_Value v, const Efl_Future2 *dead_future EINA_UNUSED)
 {
    Inner_Promise_Ctx *ctx = data;
    efl_promise2_reject(ctx->promise, ENETDOWN);
@@ -216,7 +216,7 @@ _inner_promise_cancel(void *data, const Efl_Promise2 *dead EINA_UNUSED)
 }
 
 static Eina_Value
-_chain_inner_cb(void *data, const Eina_Value v EINA_UNUSED)
+_chain_inner_cb(void *data, const Eina_Value v EINA_UNUSED, const Efl_Future2 *dead_future EINA_UNUSED)
 {
    Inner_Promise_Ctx *ctx;
    Eina_Value r;
@@ -240,7 +240,7 @@ _chain_inner_cb(void *data, const Eina_Value v EINA_UNUSED)
 }
 
 static Eina_Value
-_chain_inner_last_cb(void *data EINA_UNUSED, const Eina_Value v)
+_chain_inner_last_cb(void *data EINA_UNUSED, const Eina_Value v, const Efl_Future2 *dead_future EINA_UNUSED)
 {
    VALUE_TYPE_CHECK(v, EINA_VALUE_TYPE_STRING);
    return v;
@@ -256,7 +256,7 @@ _chain_inner_no_errors(void)
 }
 
 static Eina_Value
-_err_inner_chain(void *data EINA_UNUSED, const Eina_Value v)
+_err_inner_chain(void *data EINA_UNUSED, const Eina_Value v, const Efl_Future2 *dead_future EINA_UNUSED)
 {
    VALUE_TYPE_CHECK(v, EINA_VALUE_TYPE_ERROR);
    ecore_main_loop_quit();
@@ -274,7 +274,7 @@ _chain_inner_errors(void)
 }
 
 static Eina_Value
-_canceled_cb(void *data EINA_UNUSED, const Eina_Value v)
+_canceled_cb(void *data EINA_UNUSED, const Eina_Value v, const Efl_Future2 *dead_future EINA_UNUSED)
 {
    VALUE_TYPE_CHECK(v, EINA_VALUE_TYPE_ERROR);
    return v;

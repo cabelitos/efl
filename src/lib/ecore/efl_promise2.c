@@ -306,7 +306,7 @@ _efl_future2_cb_dispatch(Efl_Future2 *f, const Eina_Value value)
              free(str);
           }
      }
-   return cb((void *)f->data, value);
+   return cb((void *)f->data, value, f);
 }
 
 static Eina_Value
@@ -517,7 +517,8 @@ efl_promise2_as_value(Efl_Promise2 *p)
 }
 
 static Eina_Value
-_future_proxy(void *data, const Eina_Value v) {
+_future_proxy(void *data, const Eina_Value v,
+              const Efl_Future2 *dead_future EINA_UNUSED) {
    Eina_Value r;
    Efl_Promise2 *p = data;
    Efl_Future2 *f = p->future;
@@ -671,7 +672,8 @@ typedef struct _Efl_Future2_Cb_Console_Ctx {
 
 static Eina_Value
 _efl_future2_cb_console(void *data,
-                        const Eina_Value value)
+                        const Eina_Value value,
+                        const Efl_Future2 *dead_future EINA_UNUSED)
 {
    Efl_Future2_Cb_Console_Ctx *c = data;
    const char *prefix = c ? c->prefix : NULL;
@@ -717,7 +719,8 @@ efl_future2_cb_console(const char *prefix, const char *suffix)
 }
 
 static Eina_Value
-_efl_future2_cb_convert_to(void *data, const Eina_Value src)
+_efl_future2_cb_convert_to(void *data, const Eina_Value src,
+                           const Efl_Future2 *dead_future EINA_UNUSED)
 {
     const Eina_Value_Type *type = data;
     Eina_Value dst = { 0 };

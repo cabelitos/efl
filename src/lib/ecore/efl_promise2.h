@@ -11,7 +11,7 @@ typedef struct _Efl_Future2_Desc Efl_Future2_Desc;
 typedef struct _Efl_Promise2 Efl_Promise2;
 typedef struct _Efl_Future2 Efl_Future2;
 typedef struct _Efl_Future2_Desc Efl_Future2_Desc;
-typedef Eina_Value (*Efl_Future2_Cb)(void *data, const Eina_Value value);
+typedef Eina_Value (*Efl_Future2_Cb)(void *data, const Eina_Value value, const Efl_Future2 *dead_future);
 typedef void (*Efl_Promise2_Cancel_Cb) (void *data, const Efl_Promise2 *dead_promise);
 
 struct _Efl_Future2_Desc {
