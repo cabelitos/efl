@@ -10,52 +10,71 @@
 
 #define EFL_FUTURE2_DISPATCHED ((Efl_Future2_Cb)(0x01))
 
-#define EFL_MEMPOOL_CHECK_RETURN(_mp, _p)                               \
+#define EFL_MEMPOOL_CHECK_RETURN(_type, _mp, _p)                        \
   if (!eina_mempool_from((_mp), (_p)))                                  \
     {                                                                   \
-       ERR("The pointer %p does not belongs to mempool %p", (_p), (_mp)); \
+       ERR("The %s %p is not alive at mempool %p", (_type), (_p), (_mp)); \
        return;                                                          \
     }
 
-#define EFL_MEMPOOL_CHECK_RETURN_VAL(_mp, _p, _val)                     \
+#define EFL_MEMPOOL_CHECK_RETURN_VAL(_type, _mp, _p, _val)              \
   if (!eina_mempool_from((_mp), (_p)))                                  \
     {                                                                   \
-       ERR("The pointer %p does not belongs to mempool %p", (_p), (_mp)); \
+       ERR("The %s %p is not alive at mempool %p", (_type),(_p), (_mp)); \
        return (_val);                                                   \
     }
 
-#define EFL_PROMISE2_CHECK_RETURN(_p)                   \
-  do {                                                  \
-     EINA_SAFETY_ON_NULL_RETURN((_p));                  \
-     EFL_MEMPOOL_CHECK_RETURN(_promise_mp, (_p));       \
-  } while (0);
+#define EFL_MEMPOOL_CHECK_GOTO(_type, _mp, _p, _goto)                   \
+  if (!eina_mempool_from((_mp), (_p)))                                  \
+    {                                                                   \
+       ERR("The %s %p is not alive at mempool %p", (_type), (_p), (_mp)); \
+       goto _goto;                                                      \
+    }
 
-#define EFL_PROMISE2_CHECK_RETURN_VAL(_p, _val)                      \
-  do {                                                               \
-     EINA_SAFETY_ON_NULL_RETURN_VAL((_p), (_val));                   \
-     EFL_MEMPOOL_CHECK_RETURN_VAL(_promise_mp, (_p), (_val));        \
-  } while (0);
-
-#define EFL_FUTURE2_CHECK_RETURN(_p)                    \
-  do {                                                  \
-     EINA_SAFETY_ON_NULL_RETURN((_p));                  \
-     EFL_MEMPOOL_CHECK_RETURN(_future_mp, (_p));        \
-     if (_p->cb == EFL_FUTURE2_DISPATCHED)              \
-       {                                                \
-          ERR("Future %p already dispatched", _p);      \
-          return;                                       \
-       }                                                \
-  } while (0);
-
-#define EFL_FUTURE2_CHECK_RETURN_VAL(_p, _val)                  \
+#define EFL_PROMISE2_CHECK_RETURN(_p)                           \
   do {                                                          \
-     EINA_SAFETY_ON_NULL_RETURN_VAL((_p), (_val));              \
-     EFL_MEMPOOL_CHECK_RETURN_VAL(_future_mp, (_p), (_val));    \
+     EINA_SAFETY_ON_NULL_RETURN((_p));                          \
+     EFL_MEMPOOL_CHECK_RETURN("promise", _promise_mp, (_p));    \
+  } while (0);
+
+#define EFL_PROMISE2_CHECK_RETURN_VAL(_p, _val)                         \
+  do {                                                                  \
+     EINA_SAFETY_ON_NULL_RETURN_VAL((_p), (_val));                      \
+     EFL_MEMPOOL_CHECK_RETURN_VAL("promise", _promise_mp, (_p), (_val)); \
+  } while (0);
+
+#define EFL_PROMISE2_CHECK_GOTO(_p, _goto)                              \
+  do {                                                                  \
+     EINA_SAFETY_ON_NULL_GOTO((_p), _goto);                             \
+     EFL_MEMPOOL_CHECK_GOTO("promise", _promise_mp, (_p), _goto);       \
+  } while (0);
+
+#define EFL_FUTURE2_CHECK_GOTO(_p, _goto)                               \
+  do {                                                                  \
+     EINA_SAFETY_ON_NULL_GOTO((_p), _goto);                             \
+     EFL_MEMPOOL_CHECK_GOTO("future", _future_mp, (_p), _goto);         \
+  } while (0);
+
+#define EFL_FUTURE2_CHECK_RETURN(_p)                            \
+  do {                                                          \
+     EINA_SAFETY_ON_NULL_RETURN((_p));                          \
+     EFL_MEMPOOL_CHECK_RETURN("future", _future_mp, (_p));      \
      if (_p->cb == EFL_FUTURE2_DISPATCHED)                      \
        {                                                        \
           ERR("Future %p already dispatched", _p);              \
-          return (_val);                                        \
+          return;                                               \
        }                                                        \
+  } while (0);
+
+#define EFL_FUTURE2_CHECK_RETURN_VAL(_p, _val)                         \
+  do {                                                                 \
+     EINA_SAFETY_ON_NULL_RETURN_VAL((_p), (_val));                     \
+     EFL_MEMPOOL_CHECK_RETURN_VAL("future", _future_mp, (_p), (_val)); \
+     if (_p->cb == EFL_FUTURE2_DISPATCHED)                             \
+       {                                                               \
+          ERR("Future %p already dispatched", _p);                     \
+          return (_val);                                               \
+       }                                                               \
   } while (0);
 
 #undef ERR
@@ -238,7 +257,9 @@ _efl_future2_free(Efl_Future2 *f)
 {
    DBG("Free future %p", f);
    Efl_Future2 *next = f->next;
+   Efl_Future2 *prev = f->prev;
    if (next) next->prev = NULL;
+   if (prev) prev->next = NULL;
    eina_mempool_free(_future_mp, f);
    return next;
 }
@@ -257,6 +278,7 @@ _efl_promise2_unlink(Efl_Promise2 *p)
 static void
 _efl_promise2_link(Efl_Promise2 *p, Efl_Future2 *f)
 {
+   assert(f != NULL);
    if (p) p->future = f;
    f->promise = p;
    DBG("Linking future %p with promise %p", f, p);
@@ -284,7 +306,8 @@ _efl_promise2_value_steal_and_link(Eina_Value value, Efl_Future2 *f)
    Efl_Promise2 *p = _eina_value_promise2_steal(&value);
    DBG("Promise %p stolen from value", p);
    eina_value_flush(&value);
-   _efl_promise2_link(p, f);
+   if (f) _efl_promise2_link(p, f);
+   else _efl_promise2_unlink(p);
 }
 
 static Eina_Value
@@ -317,7 +340,7 @@ _efl_future2_dispatch_internal(Efl_Future2 **f,
 
    assert(value.type != &EINA_VALUE_TYPE_PROMISE2);
    while ((*f) && (!(*f)->cb)) *f = _efl_future2_free(*f);
-   if (!*f) return next_value;
+   if (!*f) return value;
    next_value = _efl_future2_cb_dispatch(*f, value);
    *f = _efl_future2_free(*f);
    return next_value;
@@ -351,9 +374,17 @@ _efl_future2_dispatch(Efl_Future2 *f, Eina_Value value)
       }
 
     if (next_value.type == &EINA_VALUE_TYPE_PROMISE2)
-      _efl_promise2_value_steal_and_link(next_value, f);
-    else
-      _efl_future2_dispatch(f, next_value);
+      {
+         if (EINA_UNLIKELY(eina_log_domain_level_check(_promise2_log_dom, EINA_LOG_LEVEL_DBG)))
+           {
+              Efl_Promise2 *p = NULL;
+
+              eina_value_pget(&next_value, &p);
+              DBG("Future %p will wait for a new promise %p", f, p);
+           }
+         _efl_promise2_value_steal_and_link(next_value, f);
+      }
+    else _efl_future2_dispatch(f, next_value);
  }
 
 static Eina_Bool
@@ -376,7 +407,7 @@ _dummy_free(void *user_data EINA_UNUSED, void *func_data EINA_UNUSED)
 static void
 _efl_future2_cancel(Efl_Future2 *f, int err)
 {
-   Eina_Value value;
+   Eina_Value value = { 0 };
 
    DBG("Cancelling future %p, cb: %p data: %p with error: %d - msg: '%s'",
        f, f->cb, f->data, err, eina_error_msg_get(err));
@@ -430,6 +461,7 @@ _efl_future2_schedule(Efl_Promise2 *p,
    return;
  err:
    _efl_future2_cancel(p->future, ENOMEM);
+   eina_value_flush(&value);
 }
 
 static void
@@ -443,7 +475,11 @@ _efl_promise2_deliver(Efl_Promise2 *p,
         if (value.type == &EINA_VALUE_TYPE_PROMISE2) _efl_promise2_value_steal_and_link(value, f);
         else _efl_future2_schedule(p, f, value);
      }
-   else DBG("Promise %p has no future", p);
+   else
+     {
+        DBG("Promise %p has no future", p);
+        eina_value_flush(&value);
+     }
    eina_mempool_free(_promise_mp, p);
 }
 
@@ -509,26 +545,46 @@ EAPI Eina_Value
 efl_promise2_as_value(Efl_Promise2 *p)
 {
    Eina_Value v = { 0 };
+   Eina_Bool r;
    EFL_PROMISE2_CHECK_RETURN_VAL(p, v);
-   eina_value_setup(&v, &EINA_VALUE_TYPE_PROMISE2);
-   eina_value_pset(&v, &p);
+   r = eina_value_setup(&v, &EINA_VALUE_TYPE_PROMISE2);
+   EINA_SAFETY_ON_FALSE_GOTO(r, err_setup);
+   r = eina_value_pset(&v, &p);
+   EINA_SAFETY_ON_FALSE_GOTO(r, err_pset);
    DBG("Created value from promise %p", p);
    return v;
+
+ err_pset:
+   eina_value_flush(&v);
+ err_setup:
+   memset(&v, 0, sizeof(Eina_Value));
+   if (p->future) _efl_future2_cancel(p->future, ENOMEM);
+   else _efl_promise2_cancel(p);
+   return v;
+}
+
+static void
+_efl_promise2_clean_dispatch(Efl_Promise2 *p, const Eina_Value v)
+{
+   Eina_Value r;
+   Efl_Future2 *f = p->future;
+
+   if (f)
+     {
+        _efl_promise2_value_dbg("Clean contenxt - Resolving promise", p, v);
+        _efl_promise2_unlink(p);
+        r = _efl_future2_dispatch_internal(&f, v);
+        if (!_eina_value_is(v, r)) _eina_value_safe_flush(r);
+     }
+   eina_mempool_free(_promise_mp, p);
 }
 
 static Eina_Value
 _future_proxy(void *data, const Eina_Value v,
-              const Efl_Future2 *dead_future EINA_UNUSED) {
-   Eina_Value r;
-   Efl_Promise2 *p = data;
-   Efl_Future2 *f = p->future;
-
-   _efl_promise2_value_dbg("Future proxy called. Resolving promise", p, v);
-   _efl_promise2_unlink(p);
-   //we're in a clean stack, no need to reschedule"
-   r = _efl_future2_dispatch_internal(&f, v);
-   if (!_eina_value_is(v, r)) _eina_value_safe_flush(r);
-   eina_mempool_free(_promise_mp, p);
+              const Efl_Future2 *dead_future EINA_UNUSED)
+{
+   //We're in a safe context (from mainloop), so we can avoid scheduling a new dispatch
+   _efl_promise2_clean_dispatch(data, v);
    return v;
 }
 
@@ -542,15 +598,35 @@ efl_future2_as_value(Efl_Future2 *f)
 {
    Eina_Value v = { 0 };
    Efl_Promise2 *p;
+   Efl_Future2 *r_future;
 
    EFL_FUTURE2_CHECK_RETURN_VAL(f, v);
    p = efl_promise2_new(_proxy_cancel, NULL);
-   EINA_SAFETY_ON_NULL_GOTO(p, err);
-   efl_future2_then(f, _future_proxy, p);
-   DBG("Creating future proxy for future: %p - promise %p", f, p);
-   return efl_promise2_as_value(p);
- err:
+   EINA_SAFETY_ON_NULL_GOTO(p, err_promise);
+   r_future = efl_future2_then(f, _future_proxy, p);
+   //If efl_future2_then() fails f will be cancelled
+   EINA_SAFETY_ON_NULL_GOTO(r_future, err_future);
+
+   v = efl_promise2_as_value(p);
+   if (v.type == &EINA_VALUE_TYPE_PROMISE2)
+     {
+        DBG("Creating future proxy for future: %p - promise %p", f, p);
+        return v;
+     }
+
+   //The promise was freed by efl_promise2_as_value()
+   ERR("Could not create a Eina_Value for future %p", f);
+   //Futures will be unlinked
+   _efl_future2_free(r_future);
+   _efl_future2_cancel(f, ENOMEM);
+   return v;
+
+ err_future:
    _efl_promise2_cancel(p);
+   return v;
+
+ err_promise:
+   _efl_future2_cancel(f, ENOMEM);
    return v;
 }
 
@@ -577,22 +653,53 @@ efl_future2_cancel(Efl_Future2 *f)
 EAPI void
 efl_promise2_resolve(Efl_Promise2 *p, Eina_Value value)
 {
-   EFL_PROMISE2_CHECK_RETURN(p);
+   EFL_PROMISE2_CHECK_GOTO(p, err);
    _efl_promise2_value_dbg("Resolve promise", p, value);
    _efl_promise2_deliver(p, value);
+   return;
+ err:
+   eina_value_flush(&value);
 }
 
 EAPI void
 efl_promise2_reject(Efl_Promise2 *p, Eina_Error err)
 {
-   EFL_PROMISE2_CHECK_RETURN(p);
    Eina_Value value;
-   eina_value_setup(&value, EINA_VALUE_TYPE_ERROR);
-   eina_value_set(&value, err);
+   Eina_Bool r;
+
+   EFL_PROMISE2_CHECK_RETURN(p);
+   r = eina_value_setup(&value, EINA_VALUE_TYPE_ERROR);
+   EINA_SAFETY_ON_FALSE_GOTO(r, err_setup);
+   r = eina_value_set(&value, err);
+   EINA_SAFETY_ON_FALSE_GOTO(r, err_set);
    DBG("Reject promise %p - Error msg: '%s' - Error code: %d", p,
        eina_error_msg_get(err), err);
    _efl_promise2_deliver(p, value);
    return;
+
+ err_set:
+   eina_value_flush(&value);
+ err_setup:
+   if (p->future) _efl_future2_cancel(p->future, ENOMEM);
+   else _efl_promise2_cancel(p);
+}
+
+static void
+_fake_future_dispatch(const Efl_Future2_Desc desc)
+{
+   /*
+     This function is used to dispatch the Efl_Future2_Cb in case,
+     the future creation fails. By calling the Efl_Future2_Cb
+     the user has a chance to free allocated resources.
+    */
+   Eina_Value v;
+
+   if (!desc.cb) return;
+   eina_value_setup(&v, EINA_VALUE_TYPE_ERROR);
+   eina_value_set(&v, ENOMEM);
+   //Since the future was not created the dead_ptr is NULL.
+   desc.cb((void *)desc.data, v, NULL);
+   eina_value_flush(&v);
 }
 
 static Efl_Future2 *
@@ -601,13 +708,18 @@ _efl_future2_new(Efl_Promise2 *p, const Efl_Future2_Desc desc)
    Efl_Future2 *f;
 
    f = eina_mempool_calloc(_future_mp, sizeof(Efl_Future2));
-   EINA_SAFETY_ON_NULL_RETURN_VAL(f, NULL);
+   EINA_SAFETY_ON_NULL_GOTO(f, err_future);
    _efl_promise2_link(p, f);
    f->cb = desc.cb;
    f->data = desc.data;
    DBG("Creating new future - Promise:%p, Future:%p, cb: %p, data: %p ",
        p, f, f->cb, f->data);
    return f;
+
+ err_future:
+   _fake_future_dispatch(desc);
+   if (p) _efl_promise2_cancel(p);
+   return NULL;
 }
 
 EAPI Efl_Future2 *
@@ -617,51 +729,74 @@ efl_future2_new(Efl_Promise2 *p)
      .cb = NULL,
      .data = NULL
    };
+
    EFL_PROMISE2_CHECK_RETURN_VAL(p, NULL);
-   EINA_SAFETY_ON_TRUE_RETURN_VAL(p->future != NULL, NULL);
+   EINA_SAFETY_ON_TRUE_GOTO(p->future != NULL, err_has_future);
+
    return _efl_future2_new(p, desc);
+
+ err_has_future:
+   //_efl_future2_cancel() will also cancel the promise
+   _efl_future2_cancel(p->future, EINVAL);
+   return NULL;
 }
 
 static Efl_Future2 *
 _efl_future2_then(Efl_Future2 *prev, const Efl_Future2_Desc desc)
 {
    Efl_Future2 *next = _efl_future2_new(NULL, desc);
-   EINA_SAFETY_ON_NULL_RETURN_VAL(next, NULL);
+   EINA_SAFETY_ON_NULL_GOTO(next, err_next);
    next->prev = prev;
    prev->next = next;
    DBG("Linking futures - Prev:%p Next:%p", prev, next);
    return next;
+
+ err_next:
+   //_fake_future_dispatch() already called by _efl_future2_new()
+   _efl_future2_cancel(prev, ENOMEM);
+   return NULL;
 }
 
 EAPI Efl_Future2 *
 efl_future2_then_from_desc(Efl_Future2 *prev, const Efl_Future2_Desc desc)
 {
-   EFL_FUTURE2_CHECK_RETURN_VAL(prev, NULL);
-   EINA_SAFETY_ON_TRUE_RETURN_VAL(prev->next != NULL, NULL);
+   EFL_FUTURE2_CHECK_GOTO(prev, err_future);
+   EINA_SAFETY_ON_TRUE_GOTO(prev->next != NULL, err_next);
    return _efl_future2_then(prev, desc);
+
+ err_next:
+   _efl_future2_cancel(prev->next, EINVAL);
+ err_future:
+   _fake_future_dispatch(desc);
+   return NULL;
 }
 
 EAPI Efl_Future2 *
 efl_future2_chain_array(Efl_Future2 *prev, const Efl_Future2_Desc descs[])
 {
    Efl_Future2 *f = prev;
-   size_t i;
+   size_t i = 0;
 
-   EFL_FUTURE2_CHECK_RETURN_VAL(prev, NULL);
-   EINA_SAFETY_ON_TRUE_RETURN_VAL(prev->next != NULL, NULL);
+   EFL_FUTURE2_CHECK_GOTO(prev, err_prev);
+   EINA_SAFETY_ON_TRUE_GOTO(prev->next != NULL, err_next);
 
    for (i = 0; descs[i].cb; i++)
      {
         f = _efl_future2_then(f, descs[i]);
-        EINA_SAFETY_ON_NULL_GOTO(f, err);
+        /*
+          If _efl_future2_then() fails the whole chain will be cancelled by it.
+          All we need to do is free the remaining descs..
+        */
+        EINA_SAFETY_ON_NULL_GOTO(f, err_prev);
      }
 
    return f;
 
- err:
-   for (f = prev->next; f; f = f->next)
-     eina_mempool_free(_future_mp, f);
-   prev->next = NULL;
+ err_next:
+   _efl_future2_cancel(f, EINVAL);
+ err_prev:
+   for (i = !i ? 0 : i + 1; descs[i].cb; i++)
+     _fake_future_dispatch(descs[i]);
    return NULL;
 }
 
@@ -792,4 +927,222 @@ efl_future2_cb_easy_from_desc(const Efl_Future2_Cb_Easy_Desc desc)
    *d = desc;
  end:
    return (Efl_Future2_Desc){ .cb = _efl_future2_cb_easy, .data = d };
+}
+
+typedef struct _Base_Ctx {
+   Efl_Promise2 *promise;
+   Efl_Future2 **futures;
+   unsigned int futures_len;
+} Base_Ctx;
+
+typedef struct _All_Promise2_Ctx {
+   Base_Ctx base;
+   Eina_Value *values;
+   unsigned int processed;
+} All_Promise2_Ctx;
+
+typedef struct _Race_Promise2_Ctx {
+   Base_Ctx base;
+   Eina_Bool dispatching;
+} Race_Promise2_Ctx;
+
+static void
+_base_ctx_clean(Base_Ctx *ctx)
+{
+   size_t i;
+   for (i = 0; i < ctx->futures_len; i++)
+     if (ctx->futures[i]) _efl_future2_cancel(ctx->futures[i], ECANCELED);
+   free(ctx->futures);
+}
+
+static void
+_all_promise2_ctx_free(All_Promise2_Ctx *ctx)
+{
+   _base_ctx_clean(&ctx->base);
+   eina_value_free(ctx->values);
+   free(ctx);
+}
+
+static void
+_all_promise2_cancel(void *data, const Efl_Promise2 *dead EINA_UNUSED)
+{
+   _all_promise2_ctx_free(data);
+}
+
+static void
+_race_promise2_ctx_free(Race_Promise2_Ctx *ctx)
+{
+   _base_ctx_clean(&ctx->base);
+   free(ctx);
+}
+
+static void
+_race_promise2_cancel(void *data, const Efl_Promise2 *dead EINA_UNUSED)
+{
+   _race_promise2_ctx_free(data);
+}
+
+static Eina_Bool
+_future_unset(Base_Ctx *ctx, unsigned int *pos, const Efl_Future2 *dead_ptr)
+{
+   unsigned int i;
+
+   for (i = 0; i < ctx->futures_len; i++)
+     {
+        if (ctx->futures[i] == dead_ptr)
+          {
+             ctx->futures[i] = NULL;
+             if (pos) *pos = i;
+             return EINA_TRUE;
+          }
+     }
+   return EINA_FALSE;
+}
+
+static Eina_Value
+_race_then_cb(void *data, const Eina_Value v,
+              const Efl_Future2 *dead_ptr)
+{
+   Race_Promise2_Ctx *ctx = data;
+   Efl_Promise2 *p = ctx->base.promise;
+
+   //This is not allowed!
+   assert(v.type != &EINA_VALUE_TYPE_PROMISE2);
+
+   assert(_future_unset(&ctx->base, NULL, dead_ptr));
+   if (ctx->dispatching) return v;
+   ctx->dispatching = EINA_TRUE;
+
+   //By freeing the race_ctx all the other futures will be cancelled.
+   _race_promise2_ctx_free(ctx);
+
+   //We're in a safe context (from mainloop), so we can avoid scheduling a new dispatch
+   _efl_promise2_clean_dispatch(p, v);
+   return v;
+}
+
+static Eina_Value
+_all_then_cb(void *data, const Eina_Value v,
+             const Efl_Future2 *dead_ptr)
+{
+   All_Promise2_Ctx *ctx = data;
+   unsigned int i = 0;
+
+   //This is not allowed!
+   assert(v.type != &EINA_VALUE_TYPE_PROMISE2);
+   assert(_future_unset(&ctx->base, &i, dead_ptr));
+
+   ctx->processed++;
+   eina_value_array_set(ctx->values, i, v);
+   if (ctx->processed == ctx->base.futures_len)
+     {
+        //We're in a safe context (from mainloop), so we can avoid scheduling a new dispatch
+        _efl_promise2_clean_dispatch(ctx->base.promise, *ctx->values);
+        _all_promise2_ctx_free(ctx);
+     }
+   return v;
+}
+
+static void
+_future2_array_cancel(Efl_Future2 *array[])
+{
+   size_t i;
+   for (i = 0; array[i]; i++) _efl_future2_cancel(array[i], ENOMEM);
+}
+
+static Eina_Bool
+_promise_create(Efl_Future2 *array[],
+                Base_Ctx *ctx,
+                Efl_Promise2_Cancel_Cb cancel_cb,
+                Efl_Future2_Cb future_cb)
+{
+   unsigned int i;
+
+   ctx->promise = efl_promise2_new(cancel_cb, ctx);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(ctx->promise, EINA_FALSE);
+
+   //Count how many futures...
+   for (i = 0; array[i]; i++);
+
+   ctx->futures_len = i;
+   ctx->futures = calloc(ctx->futures_len, sizeof(Efl_Future2 *));
+   EINA_SAFETY_ON_NULL_GOTO(ctx->futures, err_futures);
+
+   for (i = 0; i < ctx->futures_len; i++)
+     {
+        ctx->futures[i] = efl_future2_then(array[i], future_cb, ctx);
+        //Futures will be cancelled by the caller...
+        EINA_SAFETY_ON_NULL_GOTO(ctx->futures[i], err_then);
+     }
+   return EINA_TRUE;
+
+ err_then:
+   //This will also unlink the prev future...
+   do {
+      _efl_future2_free(ctx->futures[--i]);
+   } while (i);
+   free(ctx->futures);
+ err_futures:
+   eina_mempool_free(_promise_mp, ctx->promise);
+   return EINA_FALSE;
+}
+
+EAPI Efl_Promise2 *
+efl_promise2_all_array(Efl_Future2 *array[])
+{
+   All_Promise2_Ctx *ctx;
+   unsigned int i;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(array, NULL);
+   ctx = calloc(1, sizeof(All_Promise2_Ctx));
+   EINA_SAFETY_ON_NULL_GOTO(ctx, err_ctx);
+   ctx->values = eina_value_array_new(EINA_VALUE_TYPE_VALUE, 0);
+   EINA_SAFETY_ON_NULL_GOTO(ctx->values, err_array);
+   EINA_SAFETY_ON_FALSE_GOTO(_promise_create(array, &ctx->base, _all_promise2_cancel, _all_then_cb),
+                             err_promise);
+   for (i = 0; i < ctx->base.futures_len; i++)
+     {
+        Eina_Bool r;
+        Eina_Value v;
+
+        //Stub values...
+        r = eina_value_setup(&v, EINA_VALUE_TYPE_INT);
+        EINA_SAFETY_ON_FALSE_GOTO(r, err_stub);
+        r = eina_value_array_append(ctx->values, v);
+        eina_value_flush(&v);
+        EINA_SAFETY_ON_FALSE_GOTO(r, err_stub);
+     }
+
+   return ctx->base.promise;
+
+ err_stub:
+   for (i = 0; i < ctx->base.futures_len; i++) _efl_future2_free(ctx->base.futures[i]);
+   free(ctx->base.futures);
+   eina_mempool_free(_promise_mp, ctx->base.promise);
+ err_promise:
+   eina_value_free(ctx->values);
+ err_array:
+   free(ctx);
+ err_ctx:
+   _future2_array_cancel(array);
+   return NULL;
+}
+
+EAPI Efl_Promise2 *
+efl_promise2_race_array(Efl_Future2 *array[])
+{
+   Race_Promise2_Ctx *ctx;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(array, NULL);
+   ctx = calloc(1, sizeof(Race_Promise2_Ctx));
+   EINA_SAFETY_ON_NULL_GOTO(ctx, err_ctx);
+   EINA_SAFETY_ON_FALSE_GOTO(_promise_create(array, &ctx->base, _race_promise2_cancel, _race_then_cb),
+                             err_promise);
+   return ctx->base.promise;
+
+ err_promise:
+   free(ctx);
+ err_ctx:
+   _future2_array_cancel(array);
+   return NULL;
 }
