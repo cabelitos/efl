@@ -352,6 +352,17 @@ union _Eina_Value_Union
 EAPI extern const Eina_Value_Type *EINA_VALUE_TYPE_ERROR;
 
 /**
+ * @var EINA_VALUE_TYPE_VALUE
+ * manages Eina_Value values.
+ * This value will hold an Eina_Value,
+ * which can be usefull for storing data
+ * inside an #Eina_Value_Array.
+ *
+ * @since 1.21
+ */
+EAPI extern const Eina_Value_Type *EINA_VALUE_TYPE_VALUE;
+
+/**
  * @var EINA_VALUE_TYPE_UCHAR
  * manages unsigned char type.
  *
@@ -734,6 +745,7 @@ static inline int eina_value_compare(const Eina_Value *a,
  * The variable argument is dependent on chosen type. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char
  * @li EINA_VALUE_TYPE_USHORT: unsigned short
@@ -796,6 +808,7 @@ static inline Eina_Bool eina_value_set(Eina_Value *value,
  * The variable argument is dependent on chosen type. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value*
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error*
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char*
  * @li EINA_VALUE_TYPE_USHORT: unsigned short*
@@ -900,6 +913,7 @@ static inline Eina_Bool eina_value_vget(const Eina_Value *value,
  * The pointer type is dependent on chosen value type. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value*
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error*
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char*
  * @li EINA_VALUE_TYPE_USHORT: unsigned short*
@@ -967,6 +981,7 @@ static inline Eina_Bool eina_value_pset(Eina_Value *value,
  * The pointer type is dependent on chosen value type. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value*
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error*
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char*
  * @li EINA_VALUE_TYPE_USHORT: unsigned short*
@@ -1176,6 +1191,7 @@ static inline Eina_Bool eina_value_array_remove(Eina_Value *value,
  * The variable argument is dependent on chosen subtype. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char
  * @li EINA_VALUE_TYPE_USHORT: unsigned short
@@ -1238,6 +1254,7 @@ static inline Eina_Bool eina_value_array_set(Eina_Value *value,
  * The variable argument is dependent on chosen subtype. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value*
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error*
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char*
  * @li EINA_VALUE_TYPE_USHORT: unsigned short*
@@ -1288,6 +1305,7 @@ static inline Eina_Bool eina_value_array_get(const Eina_Value *value,
  * The variable argument is dependent on chosen subtype. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char
  * @li EINA_VALUE_TYPE_USHORT: unsigned short
@@ -1344,6 +1362,7 @@ static inline Eina_Bool eina_value_array_insert(Eina_Value *value,
  * The variable argument is dependent on chosen subtype. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char
  * @li EINA_VALUE_TYPE_USHORT: unsigned short
@@ -1486,6 +1505,7 @@ static inline Eina_Bool eina_value_array_vappend(Eina_Value *value,
  * The pointer type is dependent on chosen value type. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value*
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error*
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char*
  * @li EINA_VALUE_TYPE_USHORT: unsigned short*
@@ -1552,6 +1572,7 @@ static inline Eina_Bool eina_value_array_pset(Eina_Value *value,
  * The pointer type is dependent on chosen value type. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value*
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error*
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char*
  * @li EINA_VALUE_TYPE_USHORT: unsigned short*
@@ -1603,6 +1624,7 @@ static inline Eina_Bool eina_value_array_pget(const Eina_Value *value,
  * The pointer type is dependent on chosen value type. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value*
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error*
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char*
  * @li EINA_VALUE_TYPE_USHORT: unsigned short*
@@ -1662,6 +1684,7 @@ static inline Eina_Bool eina_value_array_pinsert(Eina_Value *value,
  * The pointer type is dependent on chosen value type. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value*
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error*
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char*
  * @li EINA_VALUE_TYPE_USHORT: unsigned short*
@@ -1831,6 +1854,7 @@ static inline Eina_Bool eina_value_list_remove(Eina_Value *value,
  * The variable argument is dependent on chosen subtype. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char
  * @li EINA_VALUE_TYPE_USHORT: unsigned short
@@ -1892,6 +1916,7 @@ static inline Eina_Bool eina_value_list_set(Eina_Value *value,
  * The variable argument is dependent on chosen subtype. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value*
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error*
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char*
  * @li EINA_VALUE_TYPE_USHORT: unsigned short*
@@ -1941,6 +1966,7 @@ static inline Eina_Bool eina_value_list_get(const Eina_Value *value,
  * The variable argument is dependent on chosen subtype. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char
  * @li EINA_VALUE_TYPE_USHORT: unsigned short
@@ -1996,6 +2022,7 @@ static inline Eina_Bool eina_value_list_insert(Eina_Value *value,
  * The variable argument is dependent on chosen subtype. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char
  * @li EINA_VALUE_TYPE_USHORT: unsigned short
@@ -2137,6 +2164,7 @@ static inline Eina_Bool eina_value_list_vappend(Eina_Value *value,
  * The pointer type is dependent on chosen value type. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value*
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error*
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char*
  * @li EINA_VALUE_TYPE_USHORT: unsigned short*
@@ -2202,6 +2230,7 @@ static inline Eina_Bool eina_value_list_pset(Eina_Value *value,
  * The pointer type is dependent on chosen value type. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value*
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error*
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char*
  * @li EINA_VALUE_TYPE_USHORT: unsigned short*
@@ -2252,6 +2281,7 @@ static inline Eina_Bool eina_value_list_pget(const Eina_Value *value,
  * The pointer type is dependent on chosen value type. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value*
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error*
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char*
  * @li EINA_VALUE_TYPE_USHORT: unsigned short*
@@ -2310,6 +2340,7 @@ static inline Eina_Bool eina_value_list_pinsert(Eina_Value *value,
  * The pointer type is dependent on chosen value type. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value*
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error*
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char*
  * @li EINA_VALUE_TYPE_USHORT: unsigned short*
@@ -2466,6 +2497,7 @@ static inline Eina_Bool eina_value_hash_del(Eina_Value *value,
  * The variable argument is dependent on chosen subtype. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char
  * @li EINA_VALUE_TYPE_USHORT: unsigned short
@@ -2520,6 +2552,7 @@ static inline Eina_Bool eina_value_hash_set(Eina_Value *value,
  * The variable argument is dependent on chosen subtype. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value*
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error*
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char*
  * @li EINA_VALUE_TYPE_USHORT: unsigned short*
@@ -2607,6 +2640,7 @@ static inline Eina_Bool eina_value_hash_vget(const Eina_Value *value,
  * The pointer type is dependent on chosen value type. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value*
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error*
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char*
  * @li EINA_VALUE_TYPE_USHORT: unsigned short*
@@ -2664,6 +2698,7 @@ static inline Eina_Bool eina_value_hash_pset(Eina_Value *value,
  * The pointer type is dependent on chosen value type. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value*
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error*
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char*
  * @li EINA_VALUE_TYPE_USHORT: unsigned short*
@@ -3010,6 +3045,7 @@ static inline Eina_Bool eina_value_struct_setup(Eina_Value *value,
  * The variable argument is dependent on chosen member type. The list
  * for basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char
  * @li EINA_VALUE_TYPE_USHORT: unsigned short
@@ -3079,6 +3115,7 @@ static inline Eina_Bool eina_value_struct_set(Eina_Value *value,
  * The variable argument is dependent on chosen member type. The list
  * for basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value*
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error*
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char*
  * @li EINA_VALUE_TYPE_USHORT: unsigned short*
@@ -3182,6 +3219,7 @@ static inline Eina_Bool eina_value_struct_vget(const Eina_Value *value,
  * The pointer type is dependent on chosen value type. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value*
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error*
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char*
  * @li EINA_VALUE_TYPE_USHORT: unsigned short*
@@ -3255,6 +3293,7 @@ static inline Eina_Bool eina_value_struct_pset(Eina_Value *value,
  * The pointer type is dependent on chosen value type. The list for
  * basic types:
  *
+ * @li EINA_VALUE_TYPE_VALUE: Eina_Value*
  * @li EINA_VALUE_TYPE_ERROR: Eina_Error*
  * @li EINA_VALUE_TYPE_UCHAR: unsigned char*
  * @li EINA_VALUE_TYPE_USHORT: unsigned short*
