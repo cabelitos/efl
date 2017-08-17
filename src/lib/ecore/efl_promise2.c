@@ -516,19 +516,28 @@ efl_promise2_as_value(Efl_Promise2 *p)
    return v;
 }
 
-static Eina_Value
-_future_proxy(void *data, const Eina_Value v,
-              const Efl_Future2 *dead_future EINA_UNUSED) {
+static void
+_efl_future2_clean_dispatch(Efl_Promise2 *p, const Eina_Value v)
+{
    Eina_Value r;
-   Efl_Promise2 *p = data;
    Efl_Future2 *f = p->future;
 
-   _efl_promise2_value_dbg("Future proxy called. Resolving promise", p, v);
-   _efl_promise2_unlink(p);
-   //we're in a clean stack, no need to reschedule"
-   r = _efl_future2_dispatch_internal(&f, v);
-   if (!_eina_value_is(v, r)) _eina_value_safe_flush(r);
+   if (f)
+     {
+        _efl_promise2_value_dbg("Clean contenxt - Resolving promise", p, v);
+        _efl_promise2_unlink(p);
+        //we're in a clean stack, no need to reschedule"
+        r = _efl_future2_dispatch_internal(&f, v);
+        if (!_eina_value_is(v, r)) _eina_value_safe_flush(r);
+     }
    eina_mempool_free(_promise_mp, p);
+}
+
+static Eina_Value
+_future_proxy(void *data, const Eina_Value v,
+              const Efl_Future2 *dead_future EINA_UNUSED)
+{
+   _efl_future2_clean_dispatch(data, v);
    return v;
 }
 
@@ -792,4 +801,116 @@ efl_future2_cb_easy_from_desc(const Efl_Future2_Cb_Easy_Desc desc)
    *d = desc;
  end:
    return (Efl_Future2_Desc){ .cb = _efl_future2_cb_easy, .data = d };
+}
+
+typedef struct _All_Race_Promise2_Ctx {
+   Efl_Promise2 *p;
+   Eina_List *futures;
+   Eina_Value *results;
+   Eina_Bool dispatching;
+} All_Race_Promise2_Ctx;
+
+static void
+_all_race_promise2_ctx_free(All_Race_Promise2_Ctx *ctx)
+{
+   Efl_Future2 *f;
+
+   EINA_LIST_FREE(ctx->futures, f)
+     _efl_future2_cancel(f, ECANCELED);
+   eina_value_free(ctx->results);
+   free(ctx);
+}
+
+static void
+_all_race_promise2_cancel(void *data, const Efl_Promise2 *dead EINA_UNUSED)
+{
+   _all_race_promise2_ctx_free(data);
+}
+
+static Eina_Value
+_all_then_cb(void *data, const Eina_Value v,
+             const Efl_Future2 *dead_ptr)
+{
+   All_Race_Promise2_Ctx *ctx = data;
+
+   eina_value_array_append(ctx->results, v);
+   ctx->futures = eina_list_remove(ctx->futures, dead_ptr);
+
+   if (!ctx->futures)
+     {
+        _efl_future2_clean_dispatch(ctx->p, *ctx->results);
+        _all_race_promise2_ctx_free(ctx);
+     }
+   return v;
+}
+
+static Eina_Value
+_race_then_cb(void *data, const Eina_Value v,
+              const Efl_Future2 *dead_ptr)
+{
+   All_Race_Promise2_Ctx *ctx = data;
+   Efl_Promise2 *p = ctx->p;
+
+   if (ctx->dispatching) return v;
+   ctx->dispatching = EINA_TRUE;
+   ctx->futures = eina_list_remove(ctx->futures, dead_ptr);
+   _all_race_promise2_ctx_free(ctx);
+   _efl_future2_clean_dispatch(p, v);
+   return v;
+}
+
+static Efl_Promise2 *
+_all_race_promise2_new(Efl_Future2 *array[], Eina_Bool race)
+{
+   All_Race_Promise2_Ctx *ctx;
+   Efl_Future2 *f;
+   size_t i;
+   Efl_Future2_Cb cb = race ? _race_then_cb : _all_then_cb;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(array, NULL);
+
+   ctx = calloc(1, sizeof(All_Race_Promise2_Ctx));
+   EINA_SAFETY_ON_NULL_RETURN_VAL(ctx, NULL);
+
+   if (!race)
+     {
+        ctx->results = eina_value_array_new(EINA_VALUE_TYPE_EINA_VALUE, 1);
+        EINA_SAFETY_ON_NULL_GOTO(ctx->results, err_result);
+     }
+
+   ctx->p = efl_promise2_new(_all_race_promise2_cancel, ctx);
+   EINA_SAFETY_ON_NULL_GOTO(ctx->p, err_promise);
+
+   for (i = 0; array[i]; i++)
+     {
+        f = efl_future2_then(array[i], cb, ctx);
+        EINA_SAFETY_ON_NULL_GOTO(f, err_future);
+        ctx->futures = eina_list_append(ctx->futures, f);
+     }
+
+   return ctx->p;
+
+ err_future:
+   EINA_LIST_FREE(ctx->futures, f)
+     {
+        f->prev->next = NULL;
+        eina_mempool_free(_future_mp, f);
+     }
+ err_promise:
+   eina_value_free(ctx->results);
+ err_result:
+   free(ctx);
+   return NULL;
+}
+
+EAPI Efl_Promise2 *
+efl_promise2_all_array(Efl_Future2 *array[])
+{
+   return _all_race_promise2_new(array, EINA_FALSE);
+}
+
+EAPI Efl_Promise2 *
+efl_promise2_race_array(Efl_Future2 *array[])
+{
+   return _all_race_promise2_new(array, EINA_TRUE);
 }

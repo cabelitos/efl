@@ -87,8 +87,30 @@ EAPI Efl_Future2_Desc efl_future2_cb_console(const char *prefix, const char *suf
 EAPI Efl_Future2_Desc efl_future2_cb_convert_to(const Eina_Value_Type *type);
 EAPI void *efl_promise2_data_get(const Efl_Promise2 *p) EINA_ARG_NONNULL(1);
 EAPI Efl_Future2_Desc efl_future2_cb_easy_from_desc(const Efl_Future2_Cb_Easy_Desc desc);
+EAPI Efl_Promise2 *efl_promise2_all_array(Efl_Future2 *array[]);
+EAPI Efl_Promise2 *efl_promise2_race_array(Efl_Future2 *array[]);
+
+static inline Efl_Future2 *
+efl_future2_all_array(Efl_Future2 *array[])
+{
+   Efl_Promise2 *p = efl_promise2_all_array(array);
+   if (!p) return NULL;
+   return efl_future2_new(p);
+}
+
+static inline Efl_Future2 *
+efl_future2_race_array(Efl_Future2 *array[])
+{
+   Efl_Promise2 *p = efl_promise2_race_array(array);
+   if (!p) return NULL;
+   return efl_future2_new(p);
+}
 
 #ifndef __cplusplus
+#define efl_promise2_race(...) efl_promise2_race_array((Efl_Future2 *[]){__VA_ARGS__, NULL})
+#define efl_future2_race(...) efl_future2_race_array((Efl_Future2 *[]){__VA_ARGS__, NULL})
+#define efl_future2_all(...) efl_future2_all_array((Efl_Future2 *[]){__VA_ARGS__, NULL})
+#define efl_promise2_all(...) efl_promise2_all_array((Efl_Future2 *[]){__VA_ARGS__, NULL})
 #define efl_future2_cb_easy(...) efl_future2_cb_easy_from_desc((Efl_Future2_Cb_Easy_Desc){__VA_ARGS__})
 #define efl_future2_chain(_prev, ...) efl_future2_chain_array(_prev, (Efl_Future2_Desc[]){__VA_ARGS__, {.cb = NULL, .data = NULL}})
 #define efl_future2_then(_prev, ...) efl_future2_then_from_desc(_prev, (Efl_Future2_Desc){__VA_ARGS__})
