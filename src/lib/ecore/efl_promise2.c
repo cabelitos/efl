@@ -556,8 +556,8 @@ efl_promise2_as_value(Efl_Promise2 *p)
 
  err_pset:
    eina_value_flush(&v);
- err_setup:
    memset(&v, 0, sizeof(Eina_Value));
+ err_setup:
    if (p->future) _efl_future2_cancel(p->future, ENOMEM);
    else _efl_promise2_cancel(p);
    return v;
@@ -622,6 +622,10 @@ efl_future2_as_value(Efl_Future2 *f)
    return v;
 
  err_future:
+   /*
+     Do not cancel the _efl_future2_cancel(f,..) here, it
+     was already canceled by efl_future2_then().
+   */
    _efl_promise2_cancel(p);
    return v;
 
@@ -775,7 +779,7 @@ EAPI Efl_Future2 *
 efl_future2_chain_array(Efl_Future2 *prev, const Efl_Future2_Desc descs[])
 {
    Efl_Future2 *f = prev;
-   size_t i = 0;
+   ssize_t i = -1;
 
    EFL_FUTURE2_CHECK_GOTO(prev, err_prev);
    EINA_SAFETY_ON_TRUE_GOTO(prev->next != NULL, err_next);
@@ -795,6 +799,11 @@ efl_future2_chain_array(Efl_Future2 *prev, const Efl_Future2_Desc descs[])
  err_next:
    _efl_future2_cancel(f, EINVAL);
  err_prev:
+   /*
+     If i > 0 we'll start to dispatch fake futures
+     at i + 1, since the descs[i] was already freed
+     by _efl_future2_then()
+    */
    for (i = !i ? 0 : i + 1; descs[i].cb; i++)
      _fake_future_dispatch(descs[i]);
    return NULL;
@@ -937,7 +946,7 @@ typedef struct _Base_Ctx {
 
 typedef struct _All_Promise2_Ctx {
    Base_Ctx base;
-   Eina_Value *values;
+   Eina_Value values;
    unsigned int processed;
 } All_Promise2_Ctx;
 
@@ -949,7 +958,7 @@ typedef struct _Race_Promise2_Ctx {
 static void
 _base_ctx_clean(Base_Ctx *ctx)
 {
-   size_t i;
+   unsigned int i;
    for (i = 0; i < ctx->futures_len; i++)
      if (ctx->futures[i]) _efl_future2_cancel(ctx->futures[i], ECANCELED);
    free(ctx->futures);
@@ -959,7 +968,7 @@ static void
 _all_promise2_ctx_free(All_Promise2_Ctx *ctx)
 {
    _base_ctx_clean(&ctx->base);
-   eina_value_free(ctx->values);
+   eina_value_flush(&ctx->values);
    free(ctx);
 }
 
@@ -992,12 +1001,17 @@ _future_unset(Base_Ctx *ctx, unsigned int *pos, const Efl_Future2 *dead_ptr)
         if (ctx->futures[i] == dead_ptr)
           {
              ctx->futures[i] = NULL;
-             if (pos) *pos = i;
+             *pos = i;
              return EINA_TRUE;
           }
      }
    return EINA_FALSE;
 }
+
+typedef struct _Race_Result {
+   Eina_Value value;
+   unsigned int index;
+} Race_Result;
 
 static Eina_Value
 _race_then_cb(void *data, const Eina_Value v,
@@ -1005,19 +1019,38 @@ _race_then_cb(void *data, const Eina_Value v,
 {
    Race_Promise2_Ctx *ctx = data;
    Efl_Promise2 *p = ctx->base.promise;
+   Eina_Bool found;
+   Eina_Value result;
+   unsigned int i;
+   const Eina_Value_Struct_Member RACE_STRUCT_MEMBERS[] = {
+     EINA_VALUE_STRUCT_MEMBER(EINA_VALUE_TYPE_VALUE, Race_Result, value),
+     EINA_VALUE_STRUCT_MEMBER(EINA_VALUE_TYPE_UINT, Race_Result, index),
+     EINA_VALUE_STRUCT_MEMBER_SENTINEL
+   };
+   const Eina_Value_Struct_Desc RACE_STRUCT_DESC = {
+     .version = EINA_VALUE_STRUCT_DESC_VERSION,
+     .ops = NULL,
+     .members = RACE_STRUCT_MEMBERS,
+     .member_count = 2,
+     .size = sizeof(Race_Result)
+   };
 
    //This is not allowed!
    assert(v.type != &EINA_VALUE_TYPE_PROMISE2);
+   found = _future_unset(&ctx->base, &i, dead_ptr);
+   assert(found);
 
-   assert(_future_unset(&ctx->base, NULL, dead_ptr));
-   if (ctx->dispatching) return v;
+   if (ctx->dispatching) return (Eina_Value){ 0 };
    ctx->dispatching = EINA_TRUE;
 
    //By freeing the race_ctx all the other futures will be cancelled.
    _race_promise2_ctx_free(ctx);
 
+   eina_value_struct_setup(&result, &RACE_STRUCT_DESC);
+   eina_value_struct_set(&result, "value", v);
+   eina_value_struct_set(&result, "index", i);
    //We're in a safe context (from mainloop), so we can avoid scheduling a new dispatch
-   _efl_promise2_clean_dispatch(p, v);
+   _efl_promise2_clean_dispatch(p, result);
    return v;
 }
 
@@ -1027,17 +1060,20 @@ _all_then_cb(void *data, const Eina_Value v,
 {
    All_Promise2_Ctx *ctx = data;
    unsigned int i = 0;
+   Eina_Bool found;
 
    //This is not allowed!
    assert(v.type != &EINA_VALUE_TYPE_PROMISE2);
-   assert(_future_unset(&ctx->base, &i, dead_ptr));
+
+   found = _future_unset(&ctx->base, &i, dead_ptr);
+   assert(found);
 
    ctx->processed++;
-   eina_value_array_set(ctx->values, i, v);
+   eina_value_array_set(&ctx->values, i, v);
    if (ctx->processed == ctx->base.futures_len)
      {
         //We're in a safe context (from mainloop), so we can avoid scheduling a new dispatch
-        _efl_promise2_clean_dispatch(ctx->base.promise, *ctx->values);
+        _efl_promise2_clean_dispatch(ctx->base.promise, ctx->values);
         _all_promise2_ctx_free(ctx);
      }
    return v;
@@ -1051,10 +1087,10 @@ _future2_array_cancel(Efl_Future2 *array[])
 }
 
 static Eina_Bool
-_promise_create(Efl_Future2 *array[],
-                Base_Ctx *ctx,
-                Efl_Promise2_Cancel_Cb cancel_cb,
-                Efl_Future2_Cb future_cb)
+promise_proxy_of_future_array_create(Efl_Future2 *array[],
+                                     Base_Ctx *ctx,
+                                     Efl_Promise2_Cancel_Cb cancel_cb,
+                                     Efl_Future2_Cb future_cb)
 {
    unsigned int i;
 
@@ -1078,12 +1114,13 @@ _promise_create(Efl_Future2 *array[],
 
  err_then:
    //This will also unlink the prev future...
-   do {
-      _efl_future2_free(ctx->futures[--i]);
-   } while (i);
+   while (i >= 1) _efl_future2_free(ctx->futures[--i]);
    free(ctx->futures);
+   ctx->futures = NULL;
  err_futures:
+   ctx->futures_len = 0;
    eina_mempool_free(_promise_mp, ctx->promise);
+   ctx->promise = NULL;
    return EINA_FALSE;
 }
 
@@ -1092,14 +1129,17 @@ efl_promise2_all_array(Efl_Future2 *array[])
 {
    All_Promise2_Ctx *ctx;
    unsigned int i;
+   Eina_Bool r;
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(array, NULL);
    ctx = calloc(1, sizeof(All_Promise2_Ctx));
    EINA_SAFETY_ON_NULL_GOTO(ctx, err_ctx);
-   ctx->values = eina_value_array_new(EINA_VALUE_TYPE_VALUE, 0);
-   EINA_SAFETY_ON_NULL_GOTO(ctx->values, err_array);
-   EINA_SAFETY_ON_FALSE_GOTO(_promise_create(array, &ctx->base, _all_promise2_cancel, _all_then_cb),
-                             err_promise);
+   r = eina_value_array_setup(&ctx->values, EINA_VALUE_TYPE_VALUE, 0);
+   EINA_SAFETY_ON_FALSE_GOTO(r, err_array);
+   r = promise_proxy_of_future_array_create(array, &ctx->base,
+                                            _all_promise2_cancel, _all_then_cb);
+   EINA_SAFETY_ON_FALSE_GOTO(r, err_promise);
+
    for (i = 0; i < ctx->base.futures_len; i++)
      {
         Eina_Bool r;
@@ -1108,7 +1148,7 @@ efl_promise2_all_array(Efl_Future2 *array[])
         //Stub values...
         r = eina_value_setup(&v, EINA_VALUE_TYPE_INT);
         EINA_SAFETY_ON_FALSE_GOTO(r, err_stub);
-        r = eina_value_array_append(ctx->values, v);
+        r = eina_value_array_append(&ctx->values, v);
         eina_value_flush(&v);
         EINA_SAFETY_ON_FALSE_GOTO(r, err_stub);
      }
@@ -1120,7 +1160,7 @@ efl_promise2_all_array(Efl_Future2 *array[])
    free(ctx->base.futures);
    eina_mempool_free(_promise_mp, ctx->base.promise);
  err_promise:
-   eina_value_free(ctx->values);
+   eina_value_flush(&ctx->values);
  err_array:
    free(ctx);
  err_ctx:
@@ -1132,12 +1172,16 @@ EAPI Efl_Promise2 *
 efl_promise2_race_array(Efl_Future2 *array[])
 {
    Race_Promise2_Ctx *ctx;
+   Eina_Bool r;
 
    EINA_SAFETY_ON_NULL_RETURN_VAL(array, NULL);
    ctx = calloc(1, sizeof(Race_Promise2_Ctx));
    EINA_SAFETY_ON_NULL_GOTO(ctx, err_ctx);
-   EINA_SAFETY_ON_FALSE_GOTO(_promise_create(array, &ctx->base, _race_promise2_cancel, _race_then_cb),
-                             err_promise);
+   r = promise_proxy_of_future_array_create(array, &ctx->base,
+                                            _race_promise2_cancel,
+                                            _race_then_cb);
+   EINA_SAFETY_ON_FALSE_GOTO(r, err_promise);
+
    return ctx->base.promise;
 
  err_promise:
