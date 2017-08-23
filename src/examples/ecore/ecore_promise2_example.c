@@ -33,7 +33,7 @@ _timeout(void *data)
      efl_promise2_reject(ctx->p, ENETDOWN);
    else
      {
-        Eina_Value v = { 0 };
+        Eina_Value v = EINA_VALUE_EMPTY;
         if (ctx->with_msg)
           {
             eina_value_setup(&v, EINA_VALUE_TYPE_STRING);
@@ -83,7 +83,7 @@ static Eina_Value
 _alternate_error_cb(void *data, const Eina_Value v, const Efl_Future2 *dead_future EINA_UNUSED)
 {
    Eina_Bool *should_fail = data;
-   Eina_Value new_v = { 0 };
+   Eina_Value new_v = EINA_VALUE_EMPTY;
 
    if (*should_fail)
      {

@@ -14,6 +14,7 @@
 #define DEFAULT_MSG ("Future resolve is working!")
 #define DEFAULT_INT_VALUE (5466)
 #define DEFAULT_INT_VALUE_AS_STRING ("5466")
+#define DEFAULT_TIMEOUT (0.1)
 
 #define VALUE_TYPE_CHECK(_v, _type)                     \
   do {                                                  \
@@ -90,39 +91,60 @@ _simple_timeout(void *data)
    return EINA_FALSE;
 }
 
-static Efl_Future2 *
-_future_get(double timeout, Eina_Bool fail, Eina_Value *value)
+static PromiseCtx *
+_promise_ctx_new(void)
 {
-   Efl_Promise2 *p;
    PromiseCtx *ctx;
-   Efl_Future2 *f;
-
    ctx = calloc(1, sizeof(PromiseCtx));
    fail_if(!ctx);
-   ctx->fail = fail;
-   p = efl_promise2_new(_cancel, ctx);
-   fail_if(!p);
-   ctx->p = p;
-   f = efl_future2_new(p);
+   ctx->p = efl_promise2_new(_cancel, ctx);
+   fail_if(!ctx->p);
+   return ctx;
+}
+
+static Efl_Future2 *
+_future_get(PromiseCtx *ctx, double timeout)
+{
+   Efl_Future2 *f;
+
+   f = efl_future2_new(ctx->p);
    fail_if(!f);
    ctx->t = ecore_timer_add(timeout, _simple_timeout, ctx);
    fail_if(!ctx->t);
-   ctx->value = value;
    return f;
 }
 
 static Efl_Future2 *
-_default_future_get(Eina_Bool fail, Eina_Bool use_int)
+_fail_future_get(void)
 {
-   Eina_Value *v = NULL;
-   if (!fail)
-     {
-        v = !use_int ?
-          eina_value_util_string_new(DEFAULT_MSG) :
-          eina_value_util_int_new(DEFAULT_INT_VALUE);
-        fail_if(!v);
-     }
-   return _future_get(0.1, fail, v);
+   PromiseCtx *ctx = _promise_ctx_new();
+   ctx->fail = EINA_TRUE;
+   return _future_get(ctx, DEFAULT_TIMEOUT);
+}
+
+
+static Efl_Future2 *
+_int_future_with_value_and_timeout(int value, double timeout)
+{
+   PromiseCtx *ctx = _promise_ctx_new();
+   ctx->value = eina_value_util_int_new(value);
+   fail_if(!ctx->value);
+   return _future_get(ctx, timeout);
+}
+
+static Efl_Future2 *
+_int_future_get(void)
+{
+   return _int_future_with_value_and_timeout(DEFAULT_INT_VALUE, DEFAULT_TIMEOUT);
+}
+
+static Efl_Future2 *
+_str_future_get(void)
+{
+   PromiseCtx *ctx = _promise_ctx_new();
+   ctx->value = eina_value_util_string_new(DEFAULT_MSG);
+   fail_if(!ctx->value);
+   return _future_get(ctx, DEFAULT_TIMEOUT);
 }
 
 static Eina_Value
@@ -226,7 +248,7 @@ _future_promise_create(void *data, const Eina_Value v EINA_UNUSED, const Efl_Fut
 
    p = efl_promise2_new(_inner_promise_cancel, NULL);
    fail_if(!p);
-   efl_future2_then(_default_future_get(EINA_FALSE, EINA_FALSE),
+   efl_future2_then(_str_future_get(),
                     data ? _inner_fail : _inner_resolve,
                     p);
    return efl_promise2_as_value(p);
@@ -357,6 +379,7 @@ _race_cb(void *data, const Eina_Value v, const Efl_Future2 *dead EINA_UNUSED)
         fail_if(!eina_value_copy(&v, &ctx->value));
      }
    else fail_if(EINA_TRUE); //This is not supposed to happen!
+   free(future_ctx);
    return v;
 }
 
@@ -365,10 +388,14 @@ _race_end_cb(void *data, const Eina_Value v, const Efl_Future2 *dead EINA_UNUSED
 {
    Race_Ctx *ctx = data;
    unsigned int idx;
+   Eina_Value_Struct *st;
    Eina_Value r;
 
    VALUE_TYPE_CHECK(v, EINA_VALUE_TYPE_STRUCT);
 
+   st = eina_value_memory_get(&v);
+   fail_if(!st);
+   fail_if(st->desc != EFL_PROMISE2_RACE_STRUCT_DESC);
    fail_if(!eina_value_struct_get(&v, "index", &idx));
    fail_if(idx != ctx->success_idx);
    fail_if(!eina_value_struct_get(&v, "value", &r));
@@ -382,7 +409,7 @@ START_TEST(efl_test_promise_future_success)
 {
    Efl_Future2 *f;
    fail_if(!ecore_init());
-   f = efl_future2_then(_default_future_get(EINA_FALSE, EINA_FALSE),
+   f = efl_future2_then(_str_future_get(),
                         _simple_ok, NULL);
    fail_if(!f);
    ecore_main_loop_begin();
@@ -394,7 +421,7 @@ START_TEST(efl_test_promise_future_failure)
 {
    Efl_Future2 *f;
    fail_if(!ecore_init());
-   f = efl_future2_then(_default_future_get(EINA_TRUE, EINA_FALSE),
+   f = efl_future2_then(_fail_future_get(),
                         _simple_err, NULL);
    fail_if(!f);
    ecore_main_loop_begin();
@@ -408,7 +435,7 @@ START_TEST(efl_test_promise_future_chain_no_error)
    static int i = 0;
 
    fail_if(!ecore_init());
-   f = efl_future2_chain(_default_future_get(EINA_FALSE, EINA_TRUE),
+   f = efl_future2_chain(_int_future_get(),
                          {.cb = _chain_no_error, .data = &i},
                          {.cb = _chain_no_error, .data = &i},
                          {.cb = _chain_no_error, .data = &i},
@@ -425,7 +452,7 @@ START_TEST(efl_test_promise_future_chain_error)
    static int i = 0;
 
    fail_if(!ecore_init());
-   f = efl_future2_chain(_default_future_get(EINA_TRUE, EINA_FALSE),
+   f = efl_future2_chain(_fail_future_get(),
                          {.cb = _chain_error, .data = &i},
                          {.cb = _chain_error, .data = &i},
                          {.cb = _chain_error, .data = &i},
@@ -490,7 +517,7 @@ START_TEST(efl_test_promise_future_inner_promise)
    Efl_Future2 *f;
 
    fail_if(!ecore_init());
-   f = efl_future2_chain(_default_future_get(EINA_FALSE, EINA_FALSE),
+   f = efl_future2_chain(_str_future_get(),
                          {.cb = _future_promise_create, .data = NULL},
                          {.cb = _inner_future_last, .data = NULL});
    fail_if(!f);
@@ -505,7 +532,7 @@ START_TEST(efl_test_promise_future_inner_promise_fail)
    void *data =(void *) 0x01;
 
    fail_if(!ecore_init());
-   f = efl_future2_chain(_default_future_get(EINA_FALSE, EINA_FALSE),
+   f = efl_future2_chain(_str_future_get(),
                          {.cb = _future_promise_create, .data = data},
                          {.cb = _inner_future_last, .data = data});
    fail_if(!f);
@@ -520,7 +547,7 @@ START_TEST(efl_test_promise_future_implicit_cancel)
    Efl_Future2 *f;
    int cancel_count = 0;
    Eina_Bool cancel_called = EINA_FALSE;
-   Eina_Value v = { 0 };
+   Eina_Value v = EINA_VALUE_EMPTY;
 
    fail_if(!ecore_init());
 
@@ -551,7 +578,7 @@ START_TEST(efl_test_promise_future_convert)
    Efl_Future2 *f;
 
    fail_if(!ecore_init());
-   f = efl_future2_chain(_default_future_get(EINA_FALSE, EINA_TRUE),
+   f = efl_future2_chain(_int_future_get(),
                          efl_future2_cb_convert_to(EINA_VALUE_TYPE_STRING),
                          { .cb = _convert_check, .data = NULL });
    fail_if(!f);
@@ -570,22 +597,18 @@ START_TEST(efl_test_promise_future_easy)
 
    easy3.stop_loop = EINA_TRUE;
    fail_if(!ecore_init());
-   f = efl_future2_chain(_default_future_get(EINA_FALSE, EINA_FALSE),
-                         efl_future2_cb_easy(_easy_success,
-                                             _easy_error,
-                                             _easy_free,
-                                             EINA_VALUE_TYPE_STRING,
-                                             &easy1),
-                         efl_future2_cb_easy(_easy_success,
-                                             _easy_error,
-                                             _easy_free,
-                                             NULL,
-                                             &easy2),
-                         efl_future2_cb_easy(_easy_success,
-                                             _easy_error,
-                                             _easy_free,
-                                             EINA_VALUE_TYPE_INT,
-                                             &easy3));
+   f = efl_future2_then_from_desc(_str_future_get(),
+                                  efl_future2_cb_easy(_easy_success,
+                                                      _easy_error,
+                                                      _easy_free,
+                                                      EINA_VALUE_TYPE_STRING,
+                                                      &easy1));
+   fail_if(!f);
+   f = efl_future2_then_easy(f, _easy_success, _easy_error,
+                             _easy_free, NULL, &easy2);
+   fail_if(!f);
+   f = efl_future2_chain_easy(f, {_easy_success, _easy_error,
+          _easy_free, EINA_VALUE_TYPE_INT, &easy3});
    fail_if(!f);
    ecore_main_loop_begin();
    ecore_shutdown();
@@ -603,8 +626,13 @@ START_TEST(efl_test_promise_future_all)
    fail_if(!ecore_init());
    for (i = 0; i < len - 1; i++)
      {
-        futures[i] = efl_future2_then(_default_future_get(EINA_FALSE, i % 2 == 0 ? EINA_FALSE : EINA_TRUE),
-                                      _future_all_count, &futures_called);
+        Efl_Future2 *f;
+        if (i % 2 == 0)
+          f = _str_future_get();
+        else
+          f = _int_future_get();
+        fail_if(!f);
+        futures[i] = efl_future2_then(f, _future_all_count, &futures_called);
         fail_if(!futures[i]);
      }
 
@@ -621,23 +649,20 @@ START_TEST(efl_test_promise_future_race)
    Race_Ctx ctx = { 0 };
    Efl_Future2 *futures[11];
    unsigned int i, len = EINA_C_ARRAY_LENGTH(futures);
+   double timeouts[10] = {
+     2.0, 1.0, 0.5, 0.1, 4.5, 2.3, 5.6, 1.0, 0.5, 0.3
+   };
 
    srand(time(NULL));
    fail_if(!ecore_init());
    for (i = 0; i < len - 1; i++)
      {
-        double timeout;
-        Eina_Value *v;
         Race_Future_Ctx *future_ctx = calloc(1, sizeof(Race_Future_Ctx));
         fail_if(!future_ctx);
         future_ctx->race_ctx = &ctx;
         future_ctx->idx = i;
         future_ctx->value = rand() % RAND_MAX;
-        v = eina_value_new(EINA_VALUE_TYPE_INT);
-        fail_if(!v);
-        fail_if(!eina_value_set(v, future_ctx->value));
-        timeout = (double)(rand() / RAND_MAX);
-        futures[i] = efl_future2_then(_future_get(timeout, EINA_FALSE, v),
+        futures[i] = efl_future2_then(_int_future_with_value_and_timeout(future_ctx->value, timeouts[i]),
                                       _race_cb, future_ctx);
         fail_if(!futures[i]);
      }

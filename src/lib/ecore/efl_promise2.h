@@ -17,8 +17,11 @@ typedef struct _Efl_Promise2 Efl_Promise2;
 typedef struct _Efl_Future2 Efl_Future2;
 typedef struct _Efl_Future2_Desc Efl_Future2_Desc;
 typedef struct _Efl_Future2_Cb_Easy_Desc Efl_Future2_Cb_Easy_Desc;
+typedef struct _Efl_Future2_Cb_Console_Desc Efl_Future2_Cb_Console_Desc;
 
 /**
+ * @defgroup Efl_Future2_Callbacks Efl Future2 Callbacks
+ * @ingroup Efl_future2
  * @typedef Efl_Future2_Cb Efl_Future2_Cb
  *
  * A callback used to inform that a future was resolved.
@@ -61,15 +64,18 @@ typedef struct _Efl_Future2_Cb_Easy_Desc Efl_Future2_Cb_Easy_Desc;
  * @see efl_future2_cancel()
  * @see efl_future2_then()
  * @see efl_future2_then_from_desc()
+ * @see efl_future2_then_easy()
  * @see efl_future2_chain()
  * @see efl_future2_chain_array()
  * @see efl_future2_as_value()
  * @see efl_promise2_as_value()
+ * @{
  */
 typedef Eina_Value (*Efl_Future2_Cb)(void *data, const Eina_Value value, const Efl_Future2 *dead_future);
 
 /**
  * @typedef Efl_Promise2_Cancel_Cb Efl_Promise2_Cancel_Cb.
+ * @ingroup Efl_future2
  *
  * A callback used to inform that a promise was canceled.
  *
@@ -102,14 +108,15 @@ typedef void (*Efl_Promise2_Cancel_Cb) (void *data, const Efl_Promise2 *dead_pro
 
 /**
  * @typedef Efl_Future2_Success_Cb Efl_Future2_Success_Cb.
+ * @ingroup Efl_future2
  *
  * A callback used to inform that the future completed with success.
  *
  * Unlike #Efl_Future2_Cb this callback only called if the future operation was successful, this is,
  * no errors occurred (@p value type differs from EINA_VALUE_TYPE_ERROR)
  * and the @p value matches #_Efl_Future2_Cb_Easy_Desc::success_type (if given).
- * In case #_Efl_Future2_Cb_Easy_Desc::success_type was supplied the @p value type must be
- * before using it.
+ * In case #_Efl_Future2_Cb_Easy_Desc::success_type was not supplied (it's @c NULL) the @p value type
+ * must be checked before using it.
  *
  * @note This function is always called from a safe context (main loop or some platform defined safe context).
  *
@@ -134,6 +141,7 @@ typedef Eina_Value (*Efl_Future2_Success_Cb)(void *data, const Eina_Value value)
 
 /**
  * @typedef Efl_Future2_Error_Cb Efl_Future2_Error_Cb.
+ * @ingroup Efl_future2
  *
  * A callback used to inform that the future completed with failure.
  *
@@ -145,7 +153,7 @@ typedef Eina_Value (*Efl_Future2_Success_Cb)(void *data, const Eina_Value value)
  * Otherwise this function is called from a safe context.
  *
  * If it was possible to recover from an error this function should return an empty value
- * `return (Eina_Value) {0};` or any other Eina_Value type that differs from EINA_VALUE_TYPE_ERROR.
+ * `return EINA_VALUE_EMPTY;` or any other Eina_Value type that differs from EINA_VALUE_TYPE_ERROR.
  * In this case the error will not be reported by the other futures in the chain (if any), otherwise
  * if an Eina_Value type EINA_VALUE_TYPE_ERROR is returned the error will continue to be reported
  * to the other futures in the chain.
@@ -170,14 +178,17 @@ typedef Eina_Value (*Efl_Future2_Error_Cb)(void *data, const Eina_Error error);
 
 /**
  * @typedef Efl_Future2_Free_Cb Efl_Future2_Free_Cb.
+ * @ingroup Efl_future2
  *
  * A callback used to inform that the future was freed and the user should also @c free the @p data.
+ * This callback may be called from an unsafe context if the future was canceled or an error
+ * occurred.
  *
  * @note This callback is always called, even if #Efl_Future2_Error_Cb and/or #Efl_Future2_Success_Cb
  * were not provided, which can also be used to monitor when a future ends.
  *
  * @param data The data provided by the user.
- * @param dead_future The future that will be freed.
+ * @param dead_future The future that was freed.
  *
  * @see efl_future2_cb_easy_from_desc()
  * @see efl_future2_cb_easy()
@@ -186,6 +197,7 @@ typedef void (*Efl_Future2_Free_Cb)(void *data, const Efl_Future2 *dead_future);
 
 /**
  * @struct _Efl_Future2_Cb_Easy_Desc
+ * @ingroup Efl_future2
  *
  * A struct with callbacks to be used by efl_future2_cb_easy_from_desc() and efl_future2_cb_easy()
  *
@@ -245,22 +257,44 @@ struct _Efl_Future2_Cb_Easy_Desc {
 };
 
 /**
- * @struct _Efl_Future2_Desc
+ * @struct _Efl_Future2_Cb_Console_Desc
+ * @ingroup Efl_future2
  *
+ * A struct used to define the prefix and suffix to be printed
+ * along side the a future value. This struct is used by
+ * efl_future2_cb_console_from_desc()
+ *
+ * @see efl_future2_cb_console_from_desc()
+ */
+struct _Efl_Future2_Cb_Console_Desc {
+   /**
+    * The prefix to be printed. If @c NULL an empty string ("") is used.
+    */
+   const char *prefix;
+   /**
+    * The suffix the be printed. If @c NULL '\n' is used.
+    */
+   const char *suffix;
+};
+
+/**
+ * @struct _Efl_Future2_Desc
+ * @ingroup Efl_future2
  * A struct used to define a callback and data for a future.
  *
  * This struct contains a future completion callback and a data to the future
  * completion callback which is used by efl_future2_then(), efl_future2_chain()
  * and friends to inform the user about the future result. The #_Efl_Future2_Desc::data
  * variable should be freed when #_Efl_Future2_Desc::cb is called, otherwise it will leak.
- * If efl_future2_then(), efl_future2_chain() and friends fails to return a valid future
+ *
+ * @note If efl_future2_then(), efl_future2_chain() and friends fails to return a valid future
  * (in other words: @c NULL is returned) the #_Efl_Future2_Desc::cb will be called
  * report an error like `EINVAL` or `ENOMEM` so #_Efl_Future2_Desc::data can be freed.
  *
  * @see efl_future2_then()
  * @see efl_future2_chain_array()
  * @see efl_future2_cb_convert_to()
- * @see efl_future2_cb_console()
+ * @see efl_future2_cb_console_from_desc()
  * @see efl_future2_cb_easy_from_desc()
  */
 struct _Efl_Future2_Desc {
@@ -288,22 +322,33 @@ struct _Efl_Future2_Desc {
 };
 
 /**
+ * @}
+ */
+
+/**
+ * @defgroup Efl_Promise2 Efl_Promise2
  * Creates a new promise.
  *
  * This function creates a new promise which can be used to create a future
  * using efl_future2_new(). Everytime a promise is created a #Efl_Promise2_Cancel_Cb
  * must be provided which is used to free resources that were created.
  *
- * A promise may be cancelled directly or indirectly:
+ * A promise may be cancelled directly by calling
+ * @c efl_future2_cancel(efl_future2_new(efl_promise2_new(...)))
+ * that is, cancelling any future that is chained to receive the results.
  *
- * <table>
- * <tr><th>Cancel Reason</th>Indirectly canceled</th>
- * <tr><td>A future in the future chain is cancelled.</td><td>True</td></tr>
- * <tr><td>Subsystem shutdown (ecore_shutdown())</td><td>True</td></tr>
- * <tr><td>When an EO object links a future to its life cycle and the EO object
- * is deleted, thus cancelling the future.</td><td>True</td></tr>
- * <tr><td>The future linked against the promise is canceled.Example: `efl_future2_cancel((efl_future2_new(efl_promise2_new(...))))`</td><td>False</td></tr>
- * </table>
+ * However promises can be cancelled indirectly by other entities.
+ * These other entities will call `efl_future2_cancel()` themselves,
+ * however you may not be aware of that. Some common sources
+ * of indirect cancellations:
+ *
+ * @li A subsystem was shutdown, cancelling all pending futures (ie: ecore_shutdown())
+ *
+ * @li An EO object was linked to the promise or future, then if the object dies (last reference
+ * is gone), then the pending promises and futures will be cancelled.
+ *
+ * @li Some other entity (library provider or library user) chained and cancelled his future,
+ * which will result in your future being cancelled.
  *
  * Since a promise may be canceled indirectaly (by code sections that goes beyond your scope)
  * you should always provide a cancel callback, even if you think you'll not need it.
@@ -356,8 +401,21 @@ struct _Efl_Future2_Desc {
  * @see efl_promise2_reject()
  * @see efl_promise2_data_get()
  * @see efl_promise2_as_value()
+ * @{
  */
 EAPI Efl_Promise2 *efl_promise2_new(Efl_Promise2_Cancel_Cb cancel_cb, const void *data);
+
+/**
+ * Gets the data attached to the promise.
+ *
+ * @return The data passed to efl_promise2_new() or @c NULL on error.
+ * @see efl_promise2_new()
+ * @see efl_promise2_resolve()
+ * @see efl_promise2_reject()
+ * @see efl_promise2_as_value()
+ */
+EAPI void *efl_promise2_data_get(const Efl_Promise2 *p) EINA_ARG_NONNULL(1);
+
 /**
  * Resolves a promise.
  *
@@ -396,7 +454,14 @@ EAPI void efl_promise2_resolve(Efl_Promise2 *p, Eina_Value value);
  * @see efl_promise2_as_value()
  */
 EAPI void efl_promise2_reject(Efl_Promise2 *p, Eina_Error err);
+
+
 /**
+ * @}
+ */
+
+/**
+ * @defgroup Efl_Future2 Efl_Future2
  * Cancels a future.
  *
  * This function will cancel the whole future chain immediately (it will not be schedule to the next mainloop pass)
@@ -404,6 +469,7 @@ EAPI void efl_promise2_reject(Efl_Promise2 *p, Eina_Error err);
  * with an Eina_Value typed as #EINA_VALUE_TYPE_ERROR, which its value will be
  * ECANCELED
  * @param f The future to cancel.
+ * @{
  */
 EAPI void efl_future2_cancel(Efl_Future2 *f);
 /**
@@ -430,9 +496,9 @@ EAPI void efl_future2_cancel(Efl_Future2 *f);
  *       ecore_main_loop_quit();
  *       return v;
  *    }
- *    if (v.type != EINA_VALUE_TYPE_STRING)
+ *    else if (v.type != EINA_VALUE_TYPE_STRING)
  *    {
- *      fprintf(stderr, "Expecting type '%s' - received '%s'\n", EINA_VALUE_TYPE_STRING->name, v.type.name);
+ *      fprintf(stderr, "Expecting type '%s' - received '%s'\n", EINA_VALUE_TYPE_STRING->name, v.type->name);
  *      ecore_main_loop_quit();
  *      return v;
  *    }
@@ -456,9 +522,9 @@ EAPI void efl_future2_cancel(Efl_Future2 *f);
  *       ecore_main_loop_quit();
  *       return v;
  *    }
- *    if (v.type != EINA_VALUE_TYPE_INT)
+ *    else if (v.type != EINA_VALUE_TYPE_INT)
  *    {
- *      fprintf(stderr, "Expecting type '%s' - received '%s'\n", EINA_VALUE_TYPE_INT->name, v.type.name);
+ *      fprintf(stderr, "Expecting type '%s' - received '%s'\n", EINA_VALUE_TYPE_INT->name, v.type->name);
  *      ecore_main_loop_quit();
  *      return v;
  *    }
@@ -506,6 +572,11 @@ EAPI Eina_Value efl_future2_as_value(Efl_Future2 *f);
  * Futures can also be canceled using efl_future2_cancel(), which
  * will cause the whole chain to be cancelled alongside with any pending promise.
  *
+ * @note A promise can only have one future attached to it, calling
+ * efl_future2_new() on the same promise twice will
+ * result in an error (@c NULL is returned) and the future
+ * attached to the promise will be canceled!
+ *
  * @param p A promise used to attach a future. May not be @c NULL.
  * @return The future or @c NULL on error.
  * @note If an error happens this function will CANCEL the promise.
@@ -544,9 +615,9 @@ EAPI Efl_Future2 *efl_future2_new(Efl_Promise2 *p);
  *       ecore_main_loop_quit();
  *       return v;
  *    }
- *    if (v.type != EINA_VALUE_TYPE_INT)
+ *    else if (v.type != EINA_VALUE_TYPE_INT)
  *    {
- *      fprintf(stderr, "Expecting type '%s' - received '%s'\n", EINA_VALUE_TYPE_INT->name, v.type.name);
+ *      fprintf(stderr, "Expecting type '%s' - received '%s'\n", EINA_VALUE_TYPE_INT->name, v.type->name);
  *      ecore_main_loop_quit();
  *      return v;
  *    }
@@ -634,17 +705,21 @@ EAPI Efl_Future2 *efl_future2_new(Efl_Promise2 *p);
  * void chain(void)
  * {
  *   Efl_Future2 *f = get_file_size_async("/MyFile.txt");
- *   f = efl_future2_then(f, efl_future2_cb_easy(_future_cb1, _future_err, NULL, EINA_VALUE_TYPE_INT, NULL));
+ *   f = efl_future2_then_easy(f, .success = _future_cb1, .success_type = EINA_VALUE_TYPE_INT);
  *   //_future_cb2 will be executed after _future_cb1()
- *   f = efl_future2_then(f, efl_future2_cb_easy(_future_cb2, _future_err, NULL, EINA_VALUE_TYPE_STRING, NULL));
+ *   f = efl_future2_then_easy(f, .success = _future_cb2, .success_type = EINA_VALUE_TYPE_STRING);
  *   //_future_cb2 will be executed after _future_cb2()
- *   efl_future2_then(f, efl_future2_cb_easy(_future_cb3, _future_err, NULL, EINA_VALUE_TYPE_DOUBLE, NULL));
+ *   f = efl_future2_then_easy(f, .success = _future_cb3, .success_type = EINA_VALUE_TYPE_DOUBLE);
+ *   //If an error happens _future_err will be called
+ *   efl_future2_then_easy(f, .error = _future_err);
  * }
  * @endcode
  *
  * Although it's possible to create a future chain using efl_future2_then()/efl_future2_then_from_desc()
  * there's a function that makes this task much easier, please check efl_future2_chain_array() for more
  * information.
+ * @note This example does manual conversion and print, however we offer
+ * efl_future2_cb_convert_to() and efl_future2_cb_console_from_desc() and to make those common case easier.
  *
  * @param prev A future to link against
  * @param desc A description struct contaning the callback and data.
@@ -656,11 +731,12 @@ EAPI Efl_Future2 *efl_future2_new(Efl_Promise2 *p);
  * @see #Efl_Future2_Desc
  * @see efl_future2_chain_array()
  * @see efl_future2_chain()
- * @see efl_future2_cb_console()
+ * @see efl_future2_cb_console_from_desc()
  * @see efl_future2_cb_easy_from_desc()
  * @see efl_future2_cb_easy()
  * @see efl_future2_cb_convert_to()
  * @see efl_future2_cancel()
+ * @see efl_future2_then_easy()
  */
 EAPI Efl_Future2 *efl_future2_then_from_desc(Efl_Future2 *prev, const Efl_Future2_Desc desc);
 /**
@@ -693,7 +769,7 @@ EAPI Efl_Future2 *efl_future2_then_from_desc(Efl_Future2 *prev, const Efl_Future
  *                               efl_future2_cb_easy(_future_cb3, _future_err, NULL, EINA_VALUE_TYPE_DOUBLE, NULL),
  *                               {.cb = _future_cb4, .data = NULL });
  * }
- * @encode
+ * @endcode
  *
  * @param prev The previous future
  * @param descs An array of descriptions. The last element of the array must have the #Efl_Future2_Desc::cb set to @c NULL
@@ -704,13 +780,37 @@ EAPI Efl_Future2 *efl_future2_then_from_desc(Efl_Future2 *prev, const Efl_Future
  * @see efl_future2_then()
  * @see #Efl_Future2_Desc
  * @see efl_future2_chain()
- * @see efl_future2_cb_console()
+ * @see efl_future2_cb_console_from_desc()
  * @see efl_future2_cb_easy_from_desc()
  * @see efl_future2_cb_easy()
  * @see efl_future2_then_from_desc()
+ * @see efl_future2_then_easy()
  * @see efl_future2_cb_convert_to()
  */
 EAPI Efl_Future2 *efl_future2_chain_array(Efl_Future2 *prev, const Efl_Future2_Desc descs[]);
+
+
+/**
+ *
+ * Wrappper around efl_future2_chain_array() and efl_future2_cb_easy_from_desc()
+ *
+ * This functions makes it easier to use  efl_future2_chain_array() with efl_future2_cb_easy_from_desc(),
+ * check the macro efl_future2_chain_easy() for an syntax sugar.
+ *
+ *
+ * @param prev The previous future
+ * @param descs An array of descriptions. The last element of the array must have the #Efl_Future2_Desc::cb set to @c NULL
+ * @return A future or @c NULL on error.
+ * @note If an error happens the whole future chain will CANCELED and
+ * desc.cb will be called in order to free desc.data.
+ * @see efl_future2_chain_easy()
+ * @see efl_future2_chain()
+ * @see efl_future2_cb_easy()
+ * @see efl_future2_chain_array()
+ * @see efl_future2_cb_easy_from_desc()
+ */
+EAPI Efl_Future2 *efl_future2_chain_easy_array(Efl_Future2 *prev, const Efl_Future2_Cb_Easy_Desc descs[]);
+
 /**
  * Creates an Efl_Future2_Desc that will log the previous future resolved value.
  *
@@ -718,16 +818,19 @@ EAPI Efl_Future2 *efl_future2_chain_array(Efl_Future2 *prev, const Efl_Future2_D
  * is returning. The returned value will be passed to the next future in the chain without
  * modifications.
  *
+ * There's also an helper macro called efl_future2_cb_console() which makes this
+ * fuction easier to use.
+ *
  * Example:
  *
  * @code
  *
  * efl_future2_chain(a_future, {.cb = cb1, .data = NULL},
  *                             //Inspect the cb1 value and pass to cb2 without modifications
- *                             efl_future2_cb_console("cb1 value:", NULL),
+ *                             efl_future2_cb_console("cb1 value:"),
  *                             {.cb = cb2, .data = NULL},
  *                             //Inspect the cb2 value
- *                             efl_future2_cb_console("cb2 value:", NULL))
+ *                             efl_future2_cb_console("cb2 value:", " cb2 value suffix\n"))
  * @endcode
  *
  * @param prefix A Prefix to print, if @c NULL an empty string ("") is used.
@@ -741,8 +844,10 @@ EAPI Efl_Future2 *efl_future2_chain_array(Efl_Future2 *prev, const Efl_Future2_D
  * @see efl_future2_cb_easy_from_desc()
  * @see efl_future2_cb_easy()
  * @see efl_future2_then_from_desc()
+ * @see efl_future2_then_easy()
+ * @see  efl_future2_cb_console()
  */
-EAPI Efl_Future2_Desc efl_future2_cb_console(const char *prefix, const char *suffix);
+EAPI Efl_Future2_Desc efl_future2_cb_console_from_desc(const Efl_Future2_Cb_Console_Desc desc);
 /**
  * Creates an #Efl_Future2_Desc which will convert the the received eina value to a given type.
  *
@@ -754,18 +859,10 @@ EAPI Efl_Future2_Desc efl_future2_cb_console(const char *prefix, const char *suf
  * @see efl_future2_cb_easy_from_desc()
  * @see efl_future2_cb_easy()
  * @see efl_future2_then_from_desc()
+ * @see efl_future2_then_easy()
  */
 EAPI Efl_Future2_Desc efl_future2_cb_convert_to(const Eina_Value_Type *type);
-/**
- * Gets the data attached to the promise.
- *
- * @return The data passed to efl_promise2_new() or @c NULL on error.
- * @see efl_promise2_new()
- * @see efl_promise2_resolve()
- * @see efl_promise2_reject()
- * @see efl_promise2_as_value()
- */
-EAPI void *efl_promise2_data_get(const Efl_Promise2 *p) EINA_ARG_NONNULL(1);
+
 /**
  * Creates an #Efl_Future2_Desc based on a #Efl_Future2_Cb_Easy_Desc
  *
@@ -810,7 +907,7 @@ EAPI void *efl_promise2_data_get(const Efl_Promise2 *p) EINA_ARG_NONNULL(1);
  * {
  *   fprintf(stderr, "Could not read the file size. Reason: %s\n", eina_error_msg_get(err));
  *   //Stop propagating the error.
- *   return (Eina_Value){0};
+ *   return EINA_VALUE_EMPTY;
  * }
  *
  * static void
@@ -829,7 +926,7 @@ EAPI void *efl_promise2_data_get(const Efl_Promise2 *p) EINA_ARG_NONNULL(1);
  *   ctx->f = get_file_size("/tmp/todo.txt");
  *   ctx->file_size = -1;
  *   ctx->file_size_handler_cb = cb;
- *   efl_future2_then_from_desc(f, efl_future2_cb_easy(_file_size_ok, _file_size_err, _future_freed, EINA_VALUE_TYPE_INT, ctx));
+ *   efl_future2_then_easy(f, _file_size_ok, _file_size_err, _future_freed, EINA_VALUE_TYPE_INT, ctx);
  * }
  * @endcode
  *
@@ -889,7 +986,7 @@ EAPI Efl_Future2_Desc efl_future2_cb_easy_from_desc(const Efl_Future2_Cb_Easy_De
  *           const char *msg;
  *           if (v.type != EINA_VALUE_TYPE_STRING)
  *           {
- *             fprintf(stderr, "Operation %s expects '%s' - received '%s'\n", _get_operation_name_by_index(i), EINA_VALUE_TYPE_STRING->name, v.type.name);
+ *             fprintf(stderr, "Operation %s expects '%s' - received '%s'\n", _get_operation_name_by_index(i), EINA_VALUE_TYPE_STRING->name, v.type->name);
  *             continue;
  *           }
  *           eina_value_get(&v, &msg);
@@ -900,7 +997,7 @@ EAPI Efl_Future2_Desc efl_future2_cb_easy_from_desc(const Efl_Future2_Cb_Easy_De
  *           int i;
  *           if (v.type != EINA_VALUE_TYPE_INT)
  *           {
- *             fprintf(stderr, "Operation %s expects '%s' - received '%s'\n", _get_operation_name_by_index(i), EINA_VALUE_TYPE_INT->name, v.type.name);
+ *             fprintf(stderr, "Operation %s expects '%s' - received '%s'\n", _get_operation_name_by_index(i), EINA_VALUE_TYPE_INT->name, v.type->name);
  *             continue;
  *           }
  *           eina_value_get(&v, &i);
@@ -911,7 +1008,7 @@ EAPI Efl_Future2_Desc efl_future2_cb_easy_from_desc(const Efl_Future2_Cb_Easy_De
  *           double p;
  *           if (v.type != EINA_VALUE_TYPE_DOUBLE)
  *           {
- *             fprintf(stderr, "Operation %s expects '%s' - received '%s'\n", _get_operation_name_by_index(i), EINA_VALUE_TYPE_DOUBLE->name, v.type.name);
+ *             fprintf(stderr, "Operation %s expects '%s' - received '%s'\n", _get_operation_name_by_index(i), EINA_VALUE_TYPE_DOUBLE->name, v.type->name);
  *             continue;
  *           }
  *           eina_value_get(&v, &p);
@@ -949,7 +1046,7 @@ EAPI Efl_Promise2 *efl_promise2_all_array(Efl_Future2 *array[]);
  *
  * The resulting value is an EINA_VALUE_TYPE_STRUCT with two fields:
  *
- * @li An field named "value" which contains an Eina_Value with the result itself.
+ * @li A field named "value" which contains an Eina_Value with the result itself.
  * @li A field named "index" which is an int that contains the index of the completed
  * function relative to the @p array;
  *
@@ -974,8 +1071,16 @@ EAPI Efl_Promise2 *efl_promise2_all_array(Efl_Future2 *array[]);
  *    unsigned int i;
  *    Eina_Value result;
  *    Eina_Error err;
+ *    Eina_Value_Struct *st;
  *
- *     //No need to check for the 'v' type. efl_future2_cb_easy() did that for us.
+ *     //No need to check for the 'v' type. efl_future2_cb_easy() did that for us,
+ *     //However we should check if the struct has the correct description
+ *     st = eina_value_memory_get(&v);
+ *     if (st->desc != EFL_PROMISE2_RACE_STRUCT_DESC)
+ *      {
+ *         fprintf(stderr, "Eina_Value is not a race struct\n");
+ *         return v;
+ *      }
  *     eina_value_struct_get(&v, "index", &i);
  *     //Get the operation result
  *     eina_value_struct_get(&v, "value", &result);
@@ -983,7 +1088,7 @@ EAPI Efl_Promise2 *efl_promise2_all_array(Efl_Future2 *array[]);
  *      {
  *        const char *msg;
  *        if (result.type != EINA_VALUE_TYPE_STRING)
- *          fprintf(stderr, "Operation %s expects '%s' - received '%s'\n", _get_operation_name_by_index(i), EINA_VALUE_TYPE_STRING->name, result.type.name);
+ *          fprintf(stderr, "Operation %s expects '%s' - received '%s'\n", _get_operation_name_by_index(i), EINA_VALUE_TYPE_STRING->name, result.type->name);
  *        else
  *        {
  *          eina_value_get(&result, &msg);
@@ -994,7 +1099,7 @@ EAPI Efl_Promise2 *efl_promise2_all_array(Efl_Future2 *array[]);
  *       {
  *         int i;
  *         if (result.type != EINA_VALUE_TYPE_INT)
- *           fprintf(stderr, "Operation %s expects '%s' - received '%s'\n", _get_operation_name_by_index(i), EINA_VALUE_TYPE_INT->name, v.type.name);
+ *           fprintf(stderr, "Operation %s expects '%s' - received '%s'\n", _get_operation_name_by_index(i), EINA_VALUE_TYPE_INT->name, v.type->name);
  *         else
  *         {
  *           eina_value_get(&result, &i);
@@ -1005,7 +1110,7 @@ EAPI Efl_Promise2 *efl_promise2_all_array(Efl_Future2 *array[]);
  *       {
  *         double p;
  *         if (result.type != EINA_VALUE_TYPE_DOUBLE)
- *            fprintf(stderr, "Operation %s expects '%s' - received '%s'\n", _get_operation_name_by_index(i), EINA_VALUE_TYPE_DOUBLE->name, result.type.name);
+ *            fprintf(stderr, "Operation %s expects '%s' - received '%s'\n", _get_operation_name_by_index(i), EINA_VALUE_TYPE_DOUBLE->name, result.type->name);
  *         else
  *          {
  *            eina_value_get(&result, &p);
@@ -1020,7 +1125,7 @@ EAPI Efl_Promise2 *efl_promise2_all_array(Efl_Future2 *array[]);
  * _race_err(void *data, Eina_Error err)
  * {
  *    fprintf(stderr, "Could not complete the race future. Reason: %s\n", eina_error_msg_get(err));
- *    return (Eina_Value ){0};
+ *    return EINA_VALUE_EMPTY;
  * }
  *
  * void func(void)
@@ -1033,7 +1138,7 @@ EAPI Efl_Promise2 *efl_promise2_all_array(Efl_Future2 *array[]);
  *   //calculates 50 places of PI
  *   futures[2] = calc_pi(50);
  *   f_race = efl_future2_race_array(futures);
- *   efl_future2_then(f_race, efl_future2_cb_easy(_race_cb, _race_err, NULL, EINA_VALUE_TYPE_STRUCT, NULL));
+ *   efl_future2_then_easy(f_race, _race_cb, _race_err, NULL, EINA_VALUE_TYPE_STRUCT, NULL);
  * }
  * @endcode
  *
@@ -1043,6 +1148,16 @@ EAPI Efl_Promise2 *efl_promise2_all_array(Efl_Future2 *array[]);
  * @see efl_future2_race_array()
  */
 EAPI Efl_Promise2 *efl_promise2_race_array(Efl_Future2 *array[]);
+
+/**
+ * @var EFL_PROMISE2_RACE_STRUCT_DESC
+ *
+ * A pointer to the race struct description, which
+ * is used by efl_promise2_race_array();
+ *
+ * @see efl_promise2_race_array()
+ */
+EAPI extern const Eina_Value_Struct_Desc *EFL_PROMISE2_RACE_STRUCT_DESC;
 
 /**
  * Creates a future that will be resolved once all futures from @p array is resolved.
@@ -1070,7 +1185,6 @@ efl_future2_race_array(Efl_Future2 *array[])
    return efl_future2_new(p);
 }
 
-#ifndef __cplusplus
 /**
  * A syntatic sugar over efl_promise2_race_array().
  * Usage:
@@ -1132,9 +1246,46 @@ efl_future2_race_array(Efl_Future2 *array[])
  * future = efl_future2_then(future, _my_cb, my_data);
  * @endcode
  * @see efl_future2_then_from_desc()
+ * @see efl_future2_then_easy()
  */
 #define efl_future2_then(_prev, ...) efl_future2_then_from_desc(_prev, (Efl_Future2_Desc){__VA_ARGS__})
-#endif
+/**
+ * A syntatic sugar over efl_future2_cb_console_from_desc().
+ * Usage:
+ * @code
+ * desc = efl_future2_cb_console(.prefix = "prefix", .suffix = "suffix");
+ * @endcode
+ * @see efl_future2_cb_console_from_desc()
+ */
+#define efl_future2_cb_console(...) efl_future2_cb_console_from_desc((Efl_Future2_Cb_Console_Desc){__VA_ARGS__})
+
+/**
+ * A syntatic sugar over efl_future2_then() and efl_future2_cb_easy().
+ * Usage:
+ * @code
+ * f = efl_future2_then_easy(f, .success = _success_cb, .success_type = EINA_VALUE_TYPE_DOUBLE, .data = NULL, );
+ * @endcode
+ * @see efl_future2_then_from_desc()
+ * @see efl_future2_easy()
+ * @see efl_future2_then()
+ * @see efl_future2_cb_easy_from_desc()
+ */
+#define efl_future2_then_easy(_prev, ...) efl_future2_then_from_desc(_prev, efl_future2_cb_easy(__VA_ARGS__))
+
+/**
+ * A syntatic sugar over efl_future2_chain() and efl_future2_cb_easy().
+ * Usage:
+ * @code
+ * f = efl_future2_chain_easy(f, {.success = _success_cb, .success_type = EINA_VALUE_TYPE_DOUBLE, .data = NULL},
+ *                               { .success = _success2_cb }, {.error = error_cb});
+ * @endcode
+ * @see efl_future2_chain_array()
+ * @see efl_future2_easy()
+ * @see efl_future2_chain_easy_array()
+ * @see efl_future2_cb_easy_from_desc()
+ */
+#define efl_future2_chain_easy(_prev, ...) efl_future2_chain_easy_array(_prev, (Efl_Future2_Cb_Easy_Desc[]) {__VA_ARGS__, {NULL, NULL, NULL, NULL, NULL}})
+
 
 /**
  * @}
