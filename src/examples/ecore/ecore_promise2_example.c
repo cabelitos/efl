@@ -1,18 +1,21 @@
+#define EFL_EO_API_SUPPORT 1
+#define EFL_BETA_API_SUPPORT 1
+
 #include <Ecore.h>
 #include <Eina.h>
 #include <stdlib.h>
 #include <errno.h>
 
 typedef struct _Ctx {
-   Efl_Promise2 *p;
+   Eina_Promise *p;
    Eina_Bool should_fail;
    Eina_Bool with_msg;
    Ecore_Timer *timer;
 } Ctx;
 
 typedef struct _Inner_Promise_Ctx {
-   Efl_Future2 *future;
-   Efl_Promise2 *promise;
+   Eina_Future *future;
+   Eina_Promise *promise;
 } Inner_Promise_Ctx;
 
 #define DEFAULT_MSG "the simple example is working!"
@@ -30,23 +33,23 @@ _timeout(void *data)
 {
    Ctx *ctx = data;
    if (ctx->should_fail)
-     efl_promise2_reject(ctx->p, ENETDOWN);
+     eina_promise_reject(ctx->p, ENETDOWN);
    else
      {
-        Eina_Value v = { 0 };
+        Eina_Value v = EINA_VALUE_EMPTY;
         if (ctx->with_msg)
           {
             eina_value_setup(&v, EINA_VALUE_TYPE_STRING);
             eina_value_set(&v, DEFAULT_MSG);
           }
-        efl_promise2_resolve(ctx->p, v);
+        eina_promise_resolve(ctx->p, v);
      }
    free(ctx);
    return EINA_FALSE;
 }
 
 static void
-_promise_cancel(void *data, const Efl_Promise2 *dead EINA_UNUSED)
+_promise_cancel(void *data, const Eina_Promise *dead EINA_UNUSED)
 {
    Ctx *ctx = data;
    if (ctx->timer)
@@ -54,17 +57,17 @@ _promise_cancel(void *data, const Efl_Promise2 *dead EINA_UNUSED)
    free(ctx);
 }
 
-static Efl_Future2 *
+static Eina_Future *
 _simple_future_get(Eina_Bool should_fail, Eina_Bool with_msg)
 {
    Ctx *ctx = malloc(sizeof(Ctx));
    EINA_SAFETY_ON_NULL_RETURN_VAL(ctx, NULL);
-   ctx->p = efl_promise2_new(_promise_cancel, ctx);
+   ctx->p = eina_promise_new(efl_loop_future_scheduler_get(NULL), _promise_cancel, ctx);
    EINA_SAFETY_ON_NULL_GOTO(ctx->p, err_promise);
    ctx->should_fail = should_fail;
    ctx->with_msg = with_msg;
    ctx->timer = ecore_timer_add(0.1, _timeout, ctx);
-   return efl_future2_new(ctx->p);
+   return eina_future_new(ctx->p);
 
  err_promise:
    free(ctx);
@@ -72,7 +75,7 @@ _simple_future_get(Eina_Bool should_fail, Eina_Bool with_msg)
 }
 
 static Eina_Value
-_simple_ok(void *data EINA_UNUSED, const Eina_Value v, const Efl_Future2 *dead_future EINA_UNUSED)
+_simple_ok(void *data EINA_UNUSED, const Eina_Value v, const Eina_Future *dead_future EINA_UNUSED)
 {
    VALUE_TYPE_CHECK(v, EINA_VALUE_TYPE_STRING);
    return v;
@@ -80,10 +83,10 @@ _simple_ok(void *data EINA_UNUSED, const Eina_Value v, const Efl_Future2 *dead_f
 
 
 static Eina_Value
-_alternate_error_cb(void *data, const Eina_Value v, const Efl_Future2 *dead_future EINA_UNUSED)
+_alternate_error_cb(void *data, const Eina_Value v, const Eina_Future *dead_future EINA_UNUSED)
 {
    Eina_Bool *should_fail = data;
-   Eina_Value new_v = { 0 };
+   Eina_Value new_v = EINA_VALUE_EMPTY;
 
    if (*should_fail)
      {
@@ -109,7 +112,7 @@ _alternate_error(void)
 {
    static Eina_Bool should_fail = EINA_TRUE;
 
-   efl_future2_chain(_simple_future_get(EINA_FALSE, EINA_FALSE),
+   eina_future_chain(_simple_future_get(EINA_FALSE, EINA_FALSE),
                      {.cb = _alternate_error_cb, .data = &should_fail},
                      {.cb = _alternate_error_cb, .data = &should_fail},
                      {.cb = _alternate_error_cb, .data = &should_fail},
@@ -118,7 +121,7 @@ _alternate_error(void)
 }
 
 static Eina_Value
-_simple_err(void *data EINA_UNUSED, const Eina_Value v, const Efl_Future2 *dead_future EINA_UNUSED)
+_simple_err(void *data EINA_UNUSED, const Eina_Value v, const Eina_Future *dead_future EINA_UNUSED)
 {
    VALUE_TYPE_CHECK(v, EINA_VALUE_TYPE_ERROR);
    return v;
@@ -127,16 +130,16 @@ _simple_err(void *data EINA_UNUSED, const Eina_Value v, const Efl_Future2 *dead_
 static void
 _simple(void)
 {
-   efl_future2_chain(_simple_future_get(EINA_FALSE, EINA_TRUE),
-                     efl_future2_cb_console("Expecting the following message: "DEFAULT_MSG ". Got: ", NULL),
+   eina_future_chain(_simple_future_get(EINA_FALSE, EINA_TRUE),
+                     eina_future_cb_console("Expecting the following message: "DEFAULT_MSG ". Got: ", NULL),
                      { .cb = _simple_ok, .data = NULL });
-   efl_future2_chain(_simple_future_get(EINA_TRUE, EINA_FALSE),
-                     efl_future2_cb_console("Expectig network down error. Got: ", NULL),
+   eina_future_chain(_simple_future_get(EINA_TRUE, EINA_FALSE),
+                     eina_future_cb_console("Expectig network down error. Got: ", NULL),
                      { .cb = _simple_err, .data = NULL });
 }
 
 static Eina_Value
-_chain_no_errors_cb(void *data EINA_UNUSED, const Eina_Value v, const Efl_Future2 *dead_future EINA_UNUSED)
+_chain_no_errors_cb(void *data EINA_UNUSED, const Eina_Value v, const Eina_Future *dead_future EINA_UNUSED)
 {
    int count;
    Eina_Value new_v;
@@ -156,20 +159,20 @@ _chain_no_errors_cb(void *data EINA_UNUSED, const Eina_Value v, const Efl_Future
 static void
 _chain_no_errors(void)
 {
-   efl_future2_chain(_simple_future_get(EINA_FALSE, EINA_FALSE),
-                     efl_future2_cb_console("Expecting no value. Got: ", NULL),
+   eina_future_chain(_simple_future_get(EINA_FALSE, EINA_FALSE),
+                     eina_future_cb_console("Expecting no value. Got: ", NULL),
                      {.cb = _chain_no_errors_cb, .data = NULL},
-                     efl_future2_cb_console("Expecting number 2. Got: ", NULL),
+                     eina_future_cb_console("Expecting number 2. Got: ", NULL),
                      {.cb = _chain_no_errors_cb, .data = NULL},
-                     efl_future2_cb_console("Expecting number 4. Got: ", NULL),
+                     eina_future_cb_console("Expecting number 4. Got: ", NULL),
                      {.cb = _chain_no_errors_cb, .data = NULL},
-                     efl_future2_cb_console("Expecting number 8. Got: ", NULL),
+                     eina_future_cb_console("Expecting number 8. Got: ", NULL),
                      {.cb = _chain_no_errors_cb, .data = NULL},
-                     efl_future2_cb_console("Expecting number 16. Got: ", NULL));
+                     eina_future_cb_console("Expecting number 16. Got: ", NULL));
 }
 
 static Eina_Value
-_chain_with_error_cb(void *data EINA_UNUSED, const Eina_Value v EINA_UNUSED, const Efl_Future2 *dead_future EINA_UNUSED)
+_chain_with_error_cb(void *data EINA_UNUSED, const Eina_Value v EINA_UNUSED, const Eina_Future *dead_future EINA_UNUSED)
 {
    Eina_Value err;
    eina_value_setup(&err, EINA_VALUE_TYPE_ERROR);
@@ -180,57 +183,57 @@ _chain_with_error_cb(void *data EINA_UNUSED, const Eina_Value v EINA_UNUSED, con
 static void
 _chain_with_error(void)
 {
-   efl_future2_chain(_simple_future_get(EINA_FALSE, EINA_FALSE),
+   eina_future_chain(_simple_future_get(EINA_FALSE, EINA_FALSE),
                      { _chain_with_error_cb, NULL },
-                     efl_future2_cb_console("Expecting argument list too long. Got: ", NULL),
+                     eina_future_cb_console("Expecting argument list too long. Got: ", NULL),
                      { .cb = _simple_err, .data = NULL });
 }
 
 static Eina_Value
-_delayed_resolve(void *data, const Eina_Value v, const Efl_Future2 *dead_future EINA_UNUSED)
+_delayed_resolve(void *data, const Eina_Value v, const Eina_Future *dead_future EINA_UNUSED)
 {
    Inner_Promise_Ctx *ctx = data;
    Eina_Value new_v;
    eina_value_setup(&new_v, EINA_VALUE_TYPE_STRING);
    eina_value_set(&new_v, "Hello from inner future");
-   efl_promise2_resolve(ctx->promise, new_v);
+   eina_promise_resolve(ctx->promise, new_v);
    free(ctx);
    return v;
 }
 
 static Eina_Value
-_delayed_reject(void *data, const Eina_Value v, const Efl_Future2 *dead_future EINA_UNUSED)
+_delayed_reject(void *data, const Eina_Value v, const Eina_Future *dead_future EINA_UNUSED)
 {
    Inner_Promise_Ctx *ctx = data;
-   efl_promise2_reject(ctx->promise, ENETDOWN);
+   eina_promise_reject(ctx->promise, ENETDOWN);
    free(ctx);
    return v;
 }
 
 static void
-_inner_promise_cancel(void *data, const Efl_Promise2 *dead EINA_UNUSED)
+_inner_promise_cancel(void *data, const Eina_Promise *dead EINA_UNUSED)
 {
    Inner_Promise_Ctx *ctx = data;
-   efl_future2_cancel(ctx->future);
+   eina_future_cancel(ctx->future);
    free(ctx);
 }
 
 static Eina_Value
-_chain_inner_cb(void *data, const Eina_Value v EINA_UNUSED, const Efl_Future2 *dead_future EINA_UNUSED)
+_chain_inner_cb(void *data, const Eina_Value v EINA_UNUSED, const Eina_Future *dead_future EINA_UNUSED)
 {
    Inner_Promise_Ctx *ctx;
    Eina_Value r;
 
    ctx = calloc(1, sizeof(Inner_Promise_Ctx));
    EINA_SAFETY_ON_NULL_GOTO(ctx, err);
-   ctx->promise = efl_promise2_new(_inner_promise_cancel, ctx);
+   ctx->promise = eina_promise_new(efl_loop_future_scheduler_get(NULL), _inner_promise_cancel, ctx);
    EINA_SAFETY_ON_NULL_GOTO(ctx->promise, err);
 
    printf("Creating a new promise inside the future cb\n");
-   ctx->future = efl_future2_then(_simple_future_get(EINA_FALSE, EINA_FALSE),
+   ctx->future = eina_future_then(_simple_future_get(EINA_FALSE, EINA_FALSE),
                                   !data ? _delayed_resolve : _delayed_reject,
                                   ctx);
-   return efl_promise2_as_value(ctx->promise);
+   return eina_promise_as_value(ctx->promise);
 
  err:
    eina_value_setup(&r, EINA_VALUE_TYPE_ERROR);
@@ -240,7 +243,7 @@ _chain_inner_cb(void *data, const Eina_Value v EINA_UNUSED, const Efl_Future2 *d
 }
 
 static Eina_Value
-_chain_inner_last_cb(void *data EINA_UNUSED, const Eina_Value v, const Efl_Future2 *dead_future EINA_UNUSED)
+_chain_inner_last_cb(void *data EINA_UNUSED, const Eina_Value v, const Eina_Future *dead_future EINA_UNUSED)
 {
    VALUE_TYPE_CHECK(v, EINA_VALUE_TYPE_STRING);
    return v;
@@ -249,14 +252,14 @@ _chain_inner_last_cb(void *data EINA_UNUSED, const Eina_Value v, const Efl_Futur
 static void
 _chain_inner_no_errors(void)
 {
-   efl_future2_chain(_simple_future_get(EINA_FALSE, EINA_FALSE),
+   eina_future_chain(_simple_future_get(EINA_FALSE, EINA_FALSE),
                      { .cb = _chain_inner_cb, .data = NULL },
-                     efl_future2_cb_console("Expecting message: 'Hello from inner future'. Got: ", NULL),
+                     eina_future_cb_console("Expecting message: 'Hello from inner future'. Got: ", NULL),
                      { .cb = _chain_inner_last_cb, .data = NULL });
 }
 
 static Eina_Value
-_err_inner_chain(void *data EINA_UNUSED, const Eina_Value v, const Efl_Future2 *dead_future EINA_UNUSED)
+_err_inner_chain(void *data EINA_UNUSED, const Eina_Value v, const Eina_Future *dead_future EINA_UNUSED)
 {
    VALUE_TYPE_CHECK(v, EINA_VALUE_TYPE_ERROR);
    ecore_main_loop_quit();
@@ -267,14 +270,14 @@ static void
 _chain_inner_errors(void)
 {
 
-   efl_future2_chain(_simple_future_get(EINA_FALSE, EINA_FALSE),
+   eina_future_chain(_simple_future_get(EINA_FALSE, EINA_FALSE),
                      { .cb = _chain_inner_cb, .data = (void *)1 },
-                     efl_future2_cb_console("Expection network down error. Got: ", NULL),
+                     eina_future_cb_console("Expection network down error. Got: ", NULL),
                      { .cb = _err_inner_chain, .data = NULL });
 }
 
 static Eina_Value
-_canceled_cb(void *data EINA_UNUSED, const Eina_Value v, const Efl_Future2 *dead_future EINA_UNUSED)
+_canceled_cb(void *data EINA_UNUSED, const Eina_Value v, const Eina_Future *dead_future EINA_UNUSED)
 {
    VALUE_TYPE_CHECK(v, EINA_VALUE_TYPE_ERROR);
    return v;
@@ -283,21 +286,21 @@ _canceled_cb(void *data EINA_UNUSED, const Eina_Value v, const Efl_Future2 *dead
 static void
 _future_cancel(void)
 {
-   Efl_Future2 *f;
+   Eina_Future *f;
 
-   f = efl_future2_chain(_simple_future_get(EINA_FALSE, EINA_FALSE),
-                         efl_future2_cb_console("Expecting cancelled operation error.  Got: ", NULL),
+   f = eina_future_chain(_simple_future_get(EINA_FALSE, EINA_FALSE),
+                         eina_future_cb_console("Expecting cancelled operation error.  Got: ", NULL),
                          { .cb = _canceled_cb, .data = NULL },
-                         efl_future2_cb_console("Expecting cancelled operation error.  Got: ", NULL),
+                         eina_future_cb_console("Expecting cancelled operation error.  Got: ", NULL),
                          { .cb = _canceled_cb, .data = NULL },
-                         efl_future2_cb_console("Expecting cancelled operation error.  Got: ", NULL),
+                         eina_future_cb_console("Expecting cancelled operation error.  Got: ", NULL),
                          { .cb = _canceled_cb, .data = NULL },
-                         efl_future2_cb_console("Expecting cancelled operation error.  Got: ", NULL),
+                         eina_future_cb_console("Expecting cancelled operation error.  Got: ", NULL),
                          { .cb = _canceled_cb, .data = NULL },
-                         efl_future2_cb_console("Expecting cancelled operation error.  Got: ", NULL),
+                         eina_future_cb_console("Expecting cancelled operation error.  Got: ", NULL),
                          { .cb = _canceled_cb, .data = NULL },
-                         efl_future2_cb_console("Expecting cancelled operation error.  Got: ", NULL));
-   efl_future2_cancel(f);
+                         eina_future_cb_console("Expecting cancelled operation error.  Got: ", NULL));
+   eina_future_cancel(f);
 }
 
 int

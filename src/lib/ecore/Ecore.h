@@ -331,7 +331,6 @@ extern "C" {
 #endif
 
 #include "Ecore_Common.h"
-#include "efl_promise2.h"
 #ifndef EFL_NOLEGACY_API_SUPPORT
 #include "Ecore_Legacy.h"
 #endif

@@ -134,6 +134,9 @@ void eina_log_threads_init(void);
 void eina_log_threads_shutdown(void);
 #endif
 
+Eina_Bool eina_promise_init(void);
+void eina_promise_shutdown(void);
+
 void eina_cpu_count_internal(void);
 
 void eina_file_mmap_faulty(void *addr, long page_size);

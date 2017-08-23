@@ -306,6 +306,11 @@ eina_init(void)
 
    eina_log_timing(_eina_log_dom, EINA_LOG_STATE_STOP, EINA_LOG_STATE_INIT);
 
+   if (!eina_promise_init())
+     {
+        ERR("Could not initialize Eina_Promise");
+        return 0;
+     }
    _eina_main_count = 1;
    eina_evlog("-eina_init", NULL, 0.0, NULL);
    return 1;
@@ -325,6 +330,9 @@ eina_shutdown(void)
         eina_log_timing(_eina_log_dom,
                         EINA_LOG_STATE_START,
                         EINA_LOG_STATE_SHUTDOWN);
+
+        //Shutdown promise first
+        eina_promise_shutdown();
 
         _eina_shutdown_from_desc(_eina_desc_setup + _eina_desc_setup_len);
 
