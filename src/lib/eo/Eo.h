@@ -1806,6 +1806,8 @@ efl_replace(Eo **storage, Eo *new_obj)
    *storage = new_obj;
 }
 
+EOAPI extern const Eina_Value_Type *EINA_VALUE_TYPE_OBJECT;
+
 /**
  * @}
  */
