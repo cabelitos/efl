@@ -62,3 +62,20 @@ struct @extern Eina.Rw_Slice {
 }
 
 struct @extern Eina.Value.Type; [[Eina value type]]
+
+/* FIXME-cb: Ignore cb types that should be fixed. */
+type Eina.Future.Scheduler.Schedule: __undefined_type; [[Callback used by Eina.Future.Scheduler]]
+type Eina.Future.Scheduler.Recall: __undefined_type; [[Callback used by Eina.Future.Scheduler]]
+
+struct @extern Eina.Future.Scheduler {
+   [[ This struct is used as a bridge between Eina and the future scheduler.
+      By using the provided functions Eina can schedule futures resolutions,
+      rejections and cancelations to a safe context.
+   ]]
+   schedule: Eina.Future.Scheduler.Schedule; [[ Called by Eina_Future when a delivery must be scheduled to a safe context.
+      ie: after eina_promise_resolve()
+   ]]
+   recall: Eina.Future.Scheduler.Recall; [[ Called by Eina_Future when a delivery must be cancelled.
+      ie: after eina_future_cancel()
+   ]]
+}

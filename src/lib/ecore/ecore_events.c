@@ -294,6 +294,12 @@ static void
 ecore_future_free(void *user_data, void *func_data EINA_UNUSED)
 {
    Ecore_Future_Schedule_Entry *entry = user_data;
+   /*
+     In case entry->event is not NULL, it means
+     that ecore is shutting down. In this case,
+     we must cancel the future otherwise Eina may
+     try to use it and lead to crashes.
+    */
    if (entry->event)
      {
         eina_future_cancel(entry->future);
@@ -337,11 +343,10 @@ static Eina_Future_Scheduler ecore_future_scheduler = {
    .recall = ecore_future_recall,
 };
 
-EAPI Eina_Future_Scheduler *
-efl_loop_future_scheduler_get(Eo *eo EINA_UNUSED)
+Eina_Future_Scheduler *
+_ecore_event_future_scheduler_get(void)
 {
-   //  it's a singleton now, single main loop...
-  return &ecore_future_scheduler;
+   return &ecore_future_scheduler;
 }
 
 Eina_Bool
@@ -350,6 +355,7 @@ _ecore_event_init(void)
    const char *choice = getenv("EINA_MEMPOOL");
    if ((!choice) || (!choice[0])) choice = "chained_mempool";
 
+   shutting_down = EINA_FALSE;
    ECORE_EV_FUTURE_ID = ecore_event_type_new();
    future_handler = ecore_event_handler_add(ECORE_EV_FUTURE_ID, ecore_future_dispatched, NULL);
    EINA_SAFETY_ON_NULL_GOTO(future_handler, err_handler);

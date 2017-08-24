@@ -537,7 +537,7 @@ eina_promise_init(void)
    return EINA_FALSE;
 }
 
-void
+Eina_Bool
 eina_promise_shutdown(void)
 {
    while (_pending_futures) _eina_future_cancel(_pending_futures->data, ECANCELED);
@@ -547,6 +547,7 @@ eina_promise_shutdown(void)
    _promise2_log_dom = -1;
    _promise_mp = NULL;
    _future_mp = NULL;
+   return EINA_TRUE;
 }
 
 EAPI Eina_Value

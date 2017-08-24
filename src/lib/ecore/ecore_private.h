@@ -187,6 +187,9 @@ void         _ecore_idle_enterer_call(Eo *loop);
 
 void         _ecore_idle_exiter_call(Eo *loop);
 
+
+Eina_Future_Scheduler *_ecore_event_future_scheduler_get(void);
+
 Eina_Bool    _ecore_event_init(void);
 void         _ecore_event_shutdown(void);
 int          _ecore_event_exist(void);

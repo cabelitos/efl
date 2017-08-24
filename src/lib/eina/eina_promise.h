@@ -121,7 +121,7 @@ typedef void (*Eina_Future_Scheduler_Cb)(Eina_Future *f, Eina_Value value);
  * @ingroup eina_promise
  * This struct is used as a bridge between Eina and the future scheduler.
  * By using the functions provided by #_Eina_Future_Scheduler Eina can
- * schedule futures resolutions, rejections and cancelations to a safe context
+ * schedule futures resolutions, rejections and cancelations to a safe context.
  *
  * @see eina_promise_new()
  * @see #Eina_Future_Schedule_Entry
