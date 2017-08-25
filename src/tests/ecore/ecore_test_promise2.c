@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <time.h>
+#include <Eo.h>
 #include "ecore_suite.h"
 
 #define CHAIN_SIZE (3)
@@ -127,7 +128,6 @@ _fail_future_get(void)
    ctx->fail = EINA_TRUE;
    return _future_get(ctx, DEFAULT_TIMEOUT);
 }
-
 
 static Eina_Future *
 _int_future_with_value_and_timeout(int value, double timeout)
@@ -684,6 +684,154 @@ START_TEST(efl_test_promise_future_race)
 }
 END_TEST
 
+static Eina_Value
+_eo_future1_ok(Eo *eo EINA_UNUSED, const Eina_Value v)
+{
+   const char *number;
+
+   VALUE_TYPE_CHECK(v, EINA_VALUE_TYPE_STRING);
+   fail_if(!eina_value_get(&v, &number));
+   ck_assert_str_eq(DEFAULT_INT_VALUE_AS_STRING, number);
+   return v;
+}
+
+static Eina_Value
+_eo_future1_err(Eo *eo EINA_UNUSED, Eina_Error err EINA_UNUSED)
+{
+   //Should not happen
+   fail_if(EINA_TRUE);
+}
+
+static Eina_Value
+_eo_future2_ok(Eo *eo EINA_UNUSED, const Eina_Value v)
+{
+   //Should not happen
+   fail_if(EINA_TRUE);
+   return v;
+}
+
+static Eina_Value
+_eo_future2_err(Eo *eo EINA_UNUSED, Eina_Error err)
+{
+   Eina_Value v;
+
+   fail_if(err != EINVAL);
+   fail_if(!eina_value_setup(&v, EINA_VALUE_TYPE_INT));
+   fail_if(!eina_value_set(&v, DEFAULT_INT_VALUE));
+   return v;
+}
+
+static void
+_eo_future_free(Eo *eo, const Eina_Future *dead EINA_UNUSED)
+{
+   int *free_called = efl_key_data_get(eo, "free_called");
+   (*free_called)++;
+}
+
+static Eina_Value
+_eo_chain_stop(void *data EINA_UNUSED, const Eina_Value v, const Eina_Future *dead_future EINA_UNUSED)
+{
+   int ivalue = 0;
+   VALUE_TYPE_CHECK(v, EINA_VALUE_TYPE_INT);
+   fail_if(!eina_value_get(&v, &ivalue));
+   ck_assert_int_eq(ivalue, DEFAULT_INT_VALUE);
+   ecore_main_loop_quit();
+   return v;
+}
+
+START_TEST(efl_test_promise_eo)
+{
+   Eina_Future *f;
+   Eo *obj;
+   int free_called = 0;
+
+   fail_if(!efl_object_init());
+   fail_if(!ecore_init());
+
+   //Use a random object..
+   obj = efl_add(EFL_IO_BUFFER_CLASS, NULL);
+   fail_if(!obj);
+   efl_key_data_set(obj, "free_called", &free_called);
+   f = eina_future_chain(_int_future_get(),
+                         eina_future_cb_convert_to(EINA_VALUE_TYPE_STRING),
+                         efl_future_cb(obj, _eo_future1_ok, _eo_future1_err, _eo_future_free, EINA_VALUE_TYPE_STRING),
+                         efl_future_cb(obj, _eo_future2_ok, _eo_future2_err, _eo_future_free, EINA_VALUE_TYPE_INT),
+                         { .cb = _eo_chain_stop });
+   fail_if(!f);
+   ecore_main_loop_begin();
+   efl_unref(obj);
+   ecore_shutdown();
+   efl_object_shutdown();
+   ck_assert_int_eq(free_called, 2);
+}
+END_TEST
+
+static Eina_Value
+_eo_future_link_success(Eo *eo EINA_UNUSED, const Eina_Value v)
+{
+   //This should never happen
+   fail_if(EINA_TRUE);
+   return v;
+}
+
+static Eina_Value
+_eo_future_link_err(Eo *eo, Eina_Error err)
+{
+   int *err_called = efl_key_data_get(eo, "err_called");
+   Eina_Value v;
+
+   fail_if(!err_called);
+   ck_assert_int_eq(err, ECANCELED);
+   fail_if(!eina_value_setup(&v, EINA_VALUE_TYPE_ERROR));
+   fail_if(!eina_value_set(&v, err));
+   (*err_called)++;
+   return v;
+}
+
+static Eina_Value
+_eo_link_chain_end(void *data EINA_UNUSED, const Eina_Value v, const Eina_Future *dead EINA_UNUSED)
+{
+   int *err_called = data;
+   VALUE_TYPE_CHECK(v, EINA_VALUE_TYPE_ERROR);
+   ERROR_CHECK(v, ECANCELED);
+   (*err_called)++;
+   return v;
+}
+
+START_TEST(efl_test_promise_eo_link)
+{
+   Eina_Future *f;
+   Eo *obj;
+   int err_called = 0;
+
+   fail_if(!efl_object_init());
+   fail_if(!ecore_init());
+
+   //Use a random object..
+   obj = efl_add(EFL_IO_BUFFER_CLASS, NULL);
+   fail_if(!obj);
+
+   efl_key_data_set(obj, "err_called", &err_called);
+   fail_if(!efl_key_data_get(obj, "err_called"));
+   f = efl_future_chain(obj, _int_future_get(),
+                        {.success = _eo_future_link_success, .error = _eo_future_link_err},
+                        {.success = _eo_future_link_success, .error = _eo_future_link_err},
+                        {.success = _eo_future_link_success, .error = _eo_future_link_err},
+                        {.success = _eo_future_link_success, .error = _eo_future_link_err},
+                        {.success = _eo_future_link_success, .error = _eo_future_link_err});
+   fail_if(!f);
+   f = eina_future_then(f, _eo_link_chain_end, &err_called);
+   fail_if(!f);
+   /*
+     Since the mainloop is not running and the object is deleted the whole chain must be cancelled.
+   */
+   efl_unref(obj);
+   ecore_shutdown();
+   efl_object_shutdown();
+   ck_assert_int_eq(err_called, 6);
+}
+END_TEST
+
 void ecore_test_ecore_promise2(TCase *tc)
 {
    tcase_add_test(tc, efl_test_promise_future_success);
@@ -698,4 +846,7 @@ void ecore_test_ecore_promise2(TCase *tc)
    tcase_add_test(tc, efl_test_promise_future_easy);
    tcase_add_test(tc, efl_test_promise_future_all);
    tcase_add_test(tc, efl_test_promise_future_race);
+   //FIXME: We should move this to EO tests, however they depend on Ecore...
+   tcase_add_test(tc, efl_test_promise_eo);
+   tcase_add_test(tc, efl_test_promise_eo_link);
 }
