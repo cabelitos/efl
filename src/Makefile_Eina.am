@@ -152,6 +152,7 @@ lib/eina/eina_mmap.c \
 lib/eina/eina_module.c \
 lib/eina/eina_prefix.c \
 lib/eina/eina_promise.c \
+lib/eina/eina_promise_private.h \
 lib/eina/eina_quad.c \
 lib/eina/eina_quadtree.c \
 lib/eina/eina_rbtree.c \

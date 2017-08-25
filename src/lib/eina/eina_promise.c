@@ -5,6 +5,7 @@
 #include "eina_private.h"
 #include "eina_promise.h"
 #include "eina_mempool.h"
+#include "eina_promise_private.h"
 #include <errno.h>
 #include <stdarg.h>
 #include <assert.h>
@@ -740,6 +741,7 @@ _eina_future_new(Eina_Promise *p, const Eina_Future_Desc desc)
    _eina_promise_link(p, f);
    f->cb = desc.cb;
    f->data = desc.data;
+   if (desc.storage) *desc.storage = f;
    DBG("Creating new future - Promise:%p, Future:%p, cb: %p, data: %p ",
        p, f, f->cb, f->data);
    return f;
@@ -947,15 +949,6 @@ eina_promise_data_get(const Eina_Promise *p)
 }
 
 static Eina_Value
-_eina_future_cb_easy_error(const Eina_Future_Cb_Easy_Desc *d, const Eina_Value value)
-{
-   Eina_Error err;
-   if (!d->error) return value;
-   eina_value_get(&value, &err);
-   return d->error((void *)d->data, err);
-}
-
-static Eina_Value
 _eina_future_cb_easy(void *data, const Eina_Value value,
                      const Eina_Future *dead_future)
 {
@@ -966,25 +959,7 @@ _eina_future_cb_easy(void *data, const Eina_Value value,
          if (eina_value_setup(&ret, EINA_VALUE_TYPE_ERROR)) eina_value_set(&ret, ENOMEM);
          return ret;
       }
-
-    if (value.type == EINA_VALUE_TYPE_ERROR) ret = _eina_future_cb_easy_error(d, value);
-    else if (!d->success) ret = value;  /* pass thru */
-    else
-      {
-         if ((!d->success_type) || (d->success_type && value.type == d->success_type))
-           ret = d->success((void *)d->data, value);
-         else
-           {
-              Eina_Value error = EINA_VALUE_EMPTY;
-              ERR("Future %p, success cb: %p data: %p, expected success_type %p (%s), got %p (%s)",
-                  dead_future, d->success, d->data,
-                  d->success_type, eina_value_type_name_get(d->success_type),
-                  value.type, value.type ? eina_value_type_name_get(value.type) : NULL);
-              if (eina_value_setup(&error, EINA_VALUE_TYPE_ERROR)) eina_value_set(&error, EINVAL);
-              ret = _eina_future_cb_easy_error(d, error);
-           }
-      }
-    if (d->free) d->free((void *)d->data, dead_future);
+    EASY_FUTURE_DISPATCH(ret, value, dead_future, d, (void*)d->data);
     free(d);
     return ret;
 }

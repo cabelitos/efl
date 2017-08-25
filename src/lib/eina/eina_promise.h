@@ -399,6 +399,12 @@ struct _Eina_Future_Desc {
     * its memory will leak!
     */
    const void *data;
+
+   /**
+    * The storage will be used by Eina to store a pointer to the
+    * created future.
+    */
+   Eina_Future **storage;
 };
 
 /**
