@@ -524,7 +524,7 @@ typedef struct _Efl_Future_Cb_Desc {
  * @see #Efl_Future_Cb_Desc
  * @see efl_key_data_set()
  */
-EOAPI Eina_Future_Desc efl_future_cb_from_desc(Eo *obj, const Efl_Future_Cb_Desc desc);
+EOAPI Eina_Future_Desc efl_future_cb_from_desc(Eo *obj, const Efl_Future_Cb_Desc desc) EINA_ARG_NONNULL(1);
 
 /**
  * Syntax suger over efl_future_cb_from_desc()
@@ -559,7 +559,7 @@ EOAPI Eina_Future_Desc efl_future_cb_from_desc(Eo *obj, const Efl_Future_Cb_Desc
  * @see eina_future_then_from_desc()
  * @see #Efl_Future_Cb_Desc
  */
-EOAPI Eina_Future *efl_future_chain_array(Eo *obj, Eina_Future *prev, const Efl_Future_Cb_Desc descs[]);
+EOAPI Eina_Future *efl_future_chain_array(Eo *obj, Eina_Future *prev, const Efl_Future_Cb_Desc descs[]) EINA_ARG_NONNULL(1, 2);
 
 /**
  * Syntax suger over efl_future_chain_array()
