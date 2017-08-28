@@ -642,7 +642,7 @@ START_TEST(efl_test_promise_future_all)
         fail_if(!futures[i]);
      }
 
-   futures[--len] = NULL;
+   futures[--len] = EINA_FUTURE_SENTINEL;
    fail_if(!eina_future_then(eina_future_all_array(futures), _all_cb, &len));
    ecore_main_loop_begin();
    ecore_shutdown();
@@ -673,7 +673,7 @@ START_TEST(efl_test_promise_future_race)
         fail_if(!futures[i]);
      }
 
-   futures[--len] = NULL;
+   futures[--len] = EINA_FUTURE_SENTINEL;
    fail_if(!eina_future_then(eina_future_race_array(futures),
                              _race_end_cb, &ctx));
    ecore_main_loop_begin();
@@ -832,6 +832,29 @@ START_TEST(efl_test_promise_eo_link)
 }
 END_TEST
 
+static Eina_Value
+_err_ignored(void *data EINA_UNUSED, const Eina_Value v, const Eina_Future *f EINA_UNUSED)
+{
+   //Must be NULL since the error must be ignored.
+   VALUE_TYPE_CHECK(v, NULL);
+   ecore_main_loop_quit();
+   return v;
+}
+
+START_TEST(efl_test_promise_future_ignore_error)
+{
+   Eina_Future *f;
+
+   fail_if(!ecore_init());
+   f = _fail_future_get();
+   fail_if(!f);
+   eina_future_chain(f, eina_future_cb_ignore_error(DEFAULT_ERROR),
+                     {.cb = _err_ignored});
+   ecore_main_loop_begin();
+   ecore_shutdown();
+}
+END_TEST
+
 void ecore_test_ecore_promise2(TCase *tc)
 {
    tcase_add_test(tc, efl_test_promise_future_success);
@@ -846,6 +869,7 @@ void ecore_test_ecore_promise2(TCase *tc)
    tcase_add_test(tc, efl_test_promise_future_easy);
    tcase_add_test(tc, efl_test_promise_future_all);
    tcase_add_test(tc, efl_test_promise_future_race);
+   tcase_add_test(tc, efl_test_promise_future_ignore_error);
    //FIXME: We should move this to EO tests, however they depend on Ecore...
    tcase_add_test(tc, efl_test_promise_eo);
    tcase_add_test(tc, efl_test_promise_eo_link);
