@@ -22,6 +22,7 @@ typedef struct _Eina_Future_Cb_Console_Desc Eina_Future_Cb_Console_Desc;
 typedef struct _Eina_Future_Scheduler Eina_Future_Scheduler;
 typedef struct _Eina_Future_Schedule_Entry Eina_Future_Schedule_Entry;
 typedef struct _Eina_Future_Race_Result Eina_Future_Race_Result;
+typedef struct _Eina_Future_Cb_Log_Desc Eina_Future_Cb_Log_Desc;
 
 /**
  * @defgroup Eina_Future_Callbacks Efl Future Callbacks
@@ -358,6 +359,47 @@ struct _Eina_Future_Cb_Console_Desc {
 };
 
 /**
+ * @struct _Eina_Future_Cb_Log_Desc
+ * @ingroup eina_future
+ *
+ * This struct is used by eina_future_cb_log_from_desc() and
+ * its contents will be routed to eina_log_print() along side
+ * the future value.
+ *
+ * @see eina_future_cb_log_from_desc()
+ */
+struct _Eina_Future_Cb_Log_Desc {
+   /**
+    * The prefix to be printed. If @c NULL an empty string ("") is used.
+    */
+   const char *prefix;
+   /**
+    * The suffix the be printed. If @c NULL '\n' is used.
+    */
+   const char *suffix;
+   /**
+    * The file name to be passed to eina_log_print(). if @c NULL "Unknown file" is used.
+    */
+   const char *file;
+   /**
+    * The file name to be passed to eina_log_print(). if @c NULL "Unknown function" is used.
+    */
+   const char *func;
+   /**
+    * The Eina_Log_Level to use.
+    */
+   Eina_Log_Level level;
+   /**
+    * The log domain to use.
+    */
+   int domain;
+   /**
+    * The line number to be passed to eina_log_print().
+    */
+   int line;
+};
+
+/**
  * @struct _Eina_Future_Desc
  * @ingroup eina_future
  * A struct used to define a callback and data for a future.
@@ -377,6 +419,7 @@ struct _Eina_Future_Cb_Console_Desc {
  * @see eina_future_cb_console_from_desc()
  * @see eina_future_cb_ignore_error()
  * @see eina_future_cb_easy_from_desc()
+ * @see eina_future_cb_log_from_desc()
  */
 struct _Eina_Future_Desc {
    /**
@@ -849,8 +892,43 @@ EAPI Eina_Future *eina_future_new(Eina_Promise *p) EINA_ARG_NONNULL(1) EINA_WARN
  * @see eina_future_cb_convert_to()
  * @see eina_future_cancel()
  * @see eina_future_then_easy()
+ * @see eina_future_cb_log_from_desc()
  */
 EAPI Eina_Future *eina_future_then_from_desc(Eina_Future *prev, const Eina_Future_Desc desc) EINA_ARG_NONNULL(1);
+
+
+/**
+ * Creates an Eina_Future_Desc that will log the previous future resolved value.
+ *
+ * This function can be used to quickly log the value that an #Eina_Future_Desc::cb
+ * is returning. The returned value will be passed to the next future in the chain without
+ * modifications.
+ *
+ * There're some helper macros like eina_future_cb_log_dbg() which will automatically
+ * fill the following fields:
+ *
+ * @li #Eina_Future_Cb_Log_Desc::file: The __FILE__ function will be used.
+ * @li #Eina_Future_Cb_Log_Desc::func: The __FUNCTION__ macro will be used.
+ * @li #Eina_Future_Cb_Log_Desc::level: EINA_LOG_LEVEL_DBG will be used.
+ * @li #Eina_Future_Cb_Log_Desc::domain: EINA_LOG_DOMAIN_DEFAULT will be used.
+ * @li #Eina_Future_Cb_Log_Desc::line: The __LINE__ macro will be used.
+ *
+ *
+ * @param desc The description data to be used.
+ * @return An #Eina_Future_Desc
+ *
+ * @see #Eina_Future_Cb_Log_Desc
+ * @see efl_future_then()
+ * @see efl_future_chain()
+ * @see eina_future_cb_log_dbg()
+ * @see eina_future_cb_log_crit()
+ * @see eina_future_cb_log_err()
+ * @see eina_future_cb_log_info()
+ * @see eina_future_cb_log_warn()
+ * @see eina_future_cb_console_from_desc()
+ */
+EAPI Eina_Future_Desc eina_future_cb_log_from_desc(const Eina_Future_Cb_Log_Desc desc) EINA_WARN_UNUSED_RESULT;
+
 /**
  * Creates a future chain.
  *
@@ -894,6 +972,7 @@ EAPI Eina_Future *eina_future_then_from_desc(Eina_Future *prev, const Eina_Futur
  * @see eina_future_chain()
  * @see eina_future_cb_ignore_error()
  * @see eina_future_cb_console_from_desc()
+ * @see eina_future_cb_log_from_desc()
  * @see eina_future_cb_easy_from_desc()
  * @see eina_future_cb_easy()
  * @see eina_future_then_from_desc()
@@ -925,7 +1004,7 @@ EAPI Eina_Future *eina_future_chain_array(Eina_Future *prev, const Eina_Future_D
 EAPI Eina_Future *eina_future_chain_easy_array(Eina_Future *prev, const Eina_Future_Cb_Easy_Desc descs[]) EINA_ARG_NONNULL(1, 2);
 
 /**
- * Creates an Eina_Future_Desc that will log the previous future resolved value.
+ * Creates an Eina_Future_Desc that will print the previous future resolved value.
  *
  * This function can be used to quickly inspect the value that an #Eina_Future_Desc::cb
  * is returning. The returned value will be passed to the next future in the chain without
@@ -960,6 +1039,7 @@ EAPI Eina_Future *eina_future_chain_easy_array(Eina_Future *prev, const Eina_Fut
  * @see eina_future_then_easy()
  * @see eina_future_cb_console()
  * @see eina_future_cb_ignore_error()
+ * @see eina_future_cb_log_from_desc()
  */
 EAPI Eina_Future_Desc eina_future_cb_console_from_desc(const Eina_Future_Cb_Console_Desc desc) EINA_WARN_UNUSED_RESULT;
 
@@ -1449,6 +1529,112 @@ eina_future_race_array(Eina_Future *array[])
  * @see eina_future_cb_console_from_desc()
  */
 #define eina_future_cb_console(...) eina_future_cb_console_from_desc((Eina_Future_Cb_Console_Desc){__VA_ARGS__})
+
+/**
+ * A syntatic sugar over eina_future_cb_log_from_desc().
+ *
+ * This macro will set the following fields of the #Eina_Future_Cb_Log_Desc:
+ *
+ * @li #Eina_Future_Cb_Log_Desc::file: The __FILE__ function will be used.
+ * @li #Eina_Future_Cb_Log_Desc::func: The __FUNCTION__ macro will be used.
+ * @li #Eina_Future_Cb_Log_Desc::level: EINA_LOG_LEVEL_DBG will be used.
+ * @li #Eina_Future_Cb_Log_Desc::domain: EINA_LOG_DOMAIN_DEFAULT will be used.
+ * @li #Eina_Future_Cb_Log_Desc::line: The __LINE__ macro will be used.
+ *
+ * Usage:
+ * @code
+ * desc = eina_future_cb_log_dbg(.prefix = "prefix", .suffix = "suffix");
+ * @endcode
+ * @see eina_future_cb_log_from_desc()
+ */
+#define eina_future_cb_log_dbg(_prefix, _suffix)                        \
+  eina_future_cb_log_from_desc((Eina_Future_Cb_Log_Desc){_prefix, _suffix, __FILE__, \
+         __FUNCTION__, EINA_LOG_LEVEL_DBG, EINA_LOG_DOMAIN_DEFAULT, __LINE__})
+
+/**
+ * A syntatic sugar over eina_future_cb_log_from_desc().
+ *
+ * This macro will set the following fields of the #Eina_Future_Cb_Log_Desc:
+ *
+ * @li #Eina_Future_Cb_Log_Desc::file: The __FILE__ function will be used.
+ * @li #Eina_Future_Cb_Log_Desc::func: The __FUNCTION__ macro will be used.
+ * @li #Eina_Future_Cb_Log_Desc::level: EINA_LOG_LEVEL_CRITICAL will be used.
+ * @li #Eina_Future_Cb_Log_Desc::domain: EINA_LOG_DOMAIN_DEFAULT will be used.
+ * @li #Eina_Future_Cb_Log_Desc::line: The __LINE__ macro will be used.
+ *
+ * Usage:
+ * @code
+ * desc = eina_future_cb_log_crit(.prefix = "prefix", .suffix = "suffix");
+ * @endcode
+ * @see eina_future_cb_log_from_desc()
+ */
+#define eina_future_cb_log_crit(_prefix, _suffix)                       \
+  eina_future_cb_log_from_desc((Eina_Future_Cb_Log_Desc){_prefix, _suffix, __FILE__, \
+         __FUNCTION__, EINA_LOG_LEVEL_CRITICAL, EINA_LOG_DOMAIN_DEFAULT, __LINE__})
+
+/**
+ * A syntatic sugar over eina_future_cb_log_from_desc().
+ *
+ * This macro will set the following fields of the #Eina_Future_Cb_Log_Desc:
+ *
+ * @li #Eina_Future_Cb_Log_Desc::file: The __FILE__ function will be used.
+ * @li #Eina_Future_Cb_Log_Desc::func: The __FUNCTION__ macro will be used.
+ * @li #Eina_Future_Cb_Log_Desc::level: EINA_LOG_LEVEL_ERR will be used.
+ * @li #Eina_Future_Cb_Log_Desc::domain: EINA_LOG_DOMAIN_DEFAULT will be used.
+ * @li #Eina_Future_Cb_Log_Desc::line: The __LINE__ macro will be used.
+ *
+ * Usage:
+ * @code
+ * desc = eina_future_cb_log_err(.prefix = "prefix", .suffix = "suffix");
+ * @endcode
+ * @see eina_future_cb_log_from_desc()
+ */
+#define eina_future_cb_log_err(_prefix, _suffix)                        \
+  eina_future_cb_log_from_desc((Eina_Future_Cb_Log_Desc){_prefix, _suffix, __FILE__, \
+         __FUNCTION__, EINA_LOG_LEVEL_ERR, EINA_LOG_DOMAIN_DEFAULT, __LINE__})
+
+/**
+ * A syntatic sugar over eina_future_cb_log_from_desc().
+ *
+ * This macro will set the following fields of the #Eina_Future_Cb_Log_Desc:
+ *
+ * @li #Eina_Future_Cb_Log_Desc::file: The __FILE__ function will be used.
+ * @li #Eina_Future_Cb_Log_Desc::func: The __FUNCTION__ macro will be used.
+ * @li #Eina_Future_Cb_Log_Desc::level: EINA_LOG_LEVEL_INFO will be used.
+ * @li #Eina_Future_Cb_Log_Desc::domain: EINA_LOG_DOMAIN_DEFAULT will be used.
+ * @li #Eina_Future_Cb_Log_Desc::line: The __LINE__ macro will be used.
+ *
+ *
+ * Usage:
+ * @code
+ * desc = eina_future_cb_log_info(.prefix = "prefix", .suffix = "suffix");
+ * @endcode
+ * @see eina_future_cb_log_from_desc()
+ */
+#define eina_future_cb_log_info(_prefix, _suffix)                       \
+  eina_future_cb_log_from_desc((Eina_Future_Cb_Log_Desc){_prefix, _suffix, __FILE__, \
+         __FUNCTION__, EINA_LOG_LEVEL_INFO, EINA_LOG_DOMAIN_DEFAULT, __LINE__})
+
+/**
+ * A syntatic sugar over eina_future_cb_log_from_desc().
+ *
+ * This macro will set the following fields of the #Eina_Future_Cb_Log_Desc:
+ *
+ * @li #Eina_Future_Cb_Log_Desc::file: The __FILE__ function will be used.
+ * @li #Eina_Future_Cb_Log_Desc::func: The __FUNCTION__ macro will be used.
+ * @li #Eina_Future_Cb_Log_Desc::level: EINA_LOG_LEVEL_WARN will be used.
+ * @li #Eina_Future_Cb_Log_Desc::domain: EINA_LOG_DOMAIN_DEFAULT will be used.
+ * @li #Eina_Future_Cb_Log_Desc::line: The __LINE__ macro will be used.
+ *
+ * Usage:
+ * @code
+ * desc = eina_future_cb_log_warn(.prefix = "prefix", .suffix = "suffix");
+ * @endcode
+ * @see eina_future_cb_log_from_desc()
+ */
+#define eina_future_cb_log_warn(_prefix, _suffix)                       \
+  eina_future_cb_log_from_desc((Eina_Future_Cb_Log_Desc){_prefix, _suffix, __FILE__, \
+         __FUNCTION__, EINA_LOG_LEVEL_WARN, EINA_LOG_DOMAIN_DEFAULT, __LINE__})
 
 /**
  * A syntatic sugar over eina_future_then() and eina_future_cb_easy().

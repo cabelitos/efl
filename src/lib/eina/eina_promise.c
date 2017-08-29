@@ -1303,3 +1303,53 @@ eina_future_cb_easy_desc_flush(Eina_Future_Cb_Easy_Desc *desc)
    if (desc->free) desc->free((void *)desc->data, NULL);
    memset(desc, 0, sizeof(Eina_Future_Cb_Easy_Desc));
 }
+
+static Eina_Value
+_future_cb_log(void *data, const Eina_Value value,
+               const Eina_Future *dead EINA_UNUSED)
+{
+   Eina_Future_Cb_Log_Desc *ctx = data;
+   const char *content = "no value";
+   char *str = NULL;
+
+   EINA_SAFETY_ON_NULL_RETURN_VAL(ctx, value);
+
+   if (value.type)
+     {
+        str = eina_value_to_string(&value);
+        content = str;
+     }
+
+   eina_log_print(ctx->domain, ctx->level,
+                  ctx->file ? ctx->file : "Unknown file",
+                  ctx->func ? ctx->func : "Unknown function",
+                  ctx->line, "%s%s%s",
+                  ctx->prefix ? ctx->prefix : "",
+                  content,
+                  ctx->suffix ? ctx->suffix : "");
+   free(str);
+   free((void *)ctx->func);
+   free((void *)ctx->file);
+   free((void *)ctx->prefix);
+   free((void *)ctx->suffix);
+   free(ctx);
+   return value;
+}
+
+EAPI Eina_Future_Desc
+eina_future_cb_log_from_desc(const Eina_Future_Cb_Log_Desc desc)
+{
+   Eina_Future_Cb_Log_Desc *ctx = calloc(1, sizeof(Eina_Future_Cb_Log_Desc));
+   EINA_SAFETY_ON_NULL_GOTO(ctx, exit);
+
+   if (desc.prefix) ctx->prefix = strdup(desc.prefix);
+   if (desc.suffix) ctx->suffix = strdup(desc.suffix);
+   if (desc.file) ctx->file = strdup(desc.file);
+   if (desc.func) ctx->func = strdup(desc.func);
+   ctx->domain = desc.domain;
+   ctx->level = desc.level;
+   ctx->line = desc.line;
+
+ exit:
+   return (Eina_Future_Desc){ .cb = _future_cb_log, .data = ctx };
+}

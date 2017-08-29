@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <time.h>
+#include <stdarg.h>
 #include <Eo.h>
 #include "ecore_suite.h"
 
@@ -855,6 +856,133 @@ START_TEST(efl_test_promise_future_ignore_error)
 }
 END_TEST
 
+#define PROMISE_LOG_DOMAIN_STR ("promise_test_domain")
+
+typedef struct _Promise_Log_Ctx {
+   Eina_Future_Cb_Log_Desc dbg;
+   Eina_Future_Cb_Log_Desc crit;
+   Eina_Future_Cb_Log_Desc warn;
+   Eina_Future_Cb_Log_Desc info;
+   Eina_Future_Cb_Log_Desc err;
+   Eina_Bool dbg_log_ok;
+   Eina_Bool crit_log_ok;
+   Eina_Bool warn_log_ok;
+   Eina_Bool info_log_ok;
+   Eina_Bool err_log_ok;
+} Promise_Log_Ctx;
+
+static Eina_Value
+_log_quit(void *data EINA_UNUSED, const Eina_Value v, const Eina_Future *dead EINA_UNUSED)
+{
+   int ivalue;
+
+   VALUE_TYPE_CHECK(v, EINA_VALUE_TYPE_INT);
+   fail_if(!eina_value_get(&v, &ivalue));
+   fail_if(ivalue != DEFAULT_INT_VALUE);
+   ecore_main_loop_quit();
+   return v;
+}
+
+static void
+_log_test(const Eina_Log_Domain *d,
+          Eina_Log_Level level,
+          const char *file, const char *fnc, int line,
+          const char *fmt, void *data, va_list args)
+{
+   Promise_Log_Ctx *ctx = data;
+   Eina_Bool *log_ok;
+   Eina_Future_Cb_Log_Desc *desc;
+   va_list cpy;
+   const char *prefix, *suffix, *value;
+
+   if (strcmp(d->name, PROMISE_LOG_DOMAIN_STR))
+     return;
+
+   switch (level)
+     {
+      case EINA_LOG_LEVEL_DBG:
+         log_ok = &ctx->dbg_log_ok;
+         desc = &ctx->dbg;
+         break;
+      case EINA_LOG_LEVEL_CRITICAL:
+         log_ok = &ctx->crit_log_ok;
+         desc = &ctx->crit;
+         break;
+      case EINA_LOG_LEVEL_WARN:
+         log_ok = &ctx->warn_log_ok;
+         desc = &ctx->warn;
+         break;
+      case EINA_LOG_LEVEL_INFO:
+         log_ok = &ctx->info_log_ok;
+         desc = &ctx->info;
+         break;
+      default:
+         log_ok = &ctx->err_log_ok;
+         desc = &ctx->err;
+     }
+
+   ck_assert_str_eq(fnc, desc->func);
+   ck_assert_str_eq(file, desc->file);
+   ck_assert_str_eq(fmt, "%s%s%s");
+   ck_assert_int_eq(desc->line, line);
+   ck_assert_int_eq(desc->level, level);
+   va_copy(cpy, args);
+   prefix = va_arg(cpy, const char *);
+   value = va_arg(cpy, const char *);
+   suffix = va_arg(cpy, const char *);
+   ck_assert_str_eq(prefix, desc->prefix ? desc->prefix : "");
+   ck_assert_str_eq(suffix, desc->suffix ? desc->suffix : "");
+   ck_assert_str_eq(value, DEFAULT_INT_VALUE_AS_STRING);
+   va_end(cpy);
+   *log_ok = EINA_TRUE;
+}
+
+START_TEST(efl_test_promise_log)
+{
+   Promise_Log_Ctx ctx = { 0 };
+   Eina_Future *f;
+   int domain;
+
+   fail_if(!ecore_init());
+
+   domain = eina_log_domain_register(PROMISE_LOG_DOMAIN_STR, EINA_COLOR_CYAN);
+   fail_if(domain < 0);
+   eina_log_domain_level_set(PROMISE_LOG_DOMAIN_STR, EINA_LOG_LEVEL_DBG);
+   ctx.dbg = (Eina_Future_Cb_Log_Desc){"dbg prefix:", " dbg suffix", __FILE__,
+                                       __FUNCTION__, EINA_LOG_LEVEL_DBG,
+                                       domain, __LINE__};
+   ctx.crit = (Eina_Future_Cb_Log_Desc){NULL, NULL, __FILE__,
+                                       __FUNCTION__, EINA_LOG_LEVEL_CRITICAL,
+                                       domain, __LINE__};
+   ctx.warn = (Eina_Future_Cb_Log_Desc){"warn prefix:", NULL, __FILE__,
+                                       __FUNCTION__, EINA_LOG_LEVEL_WARN,
+                                        domain, __LINE__};
+   ctx.err = (Eina_Future_Cb_Log_Desc){NULL, " err suffix", __FILE__,
+                                       __FUNCTION__, EINA_LOG_LEVEL_ERR,
+                                       domain, __LINE__};
+   ctx.info = (Eina_Future_Cb_Log_Desc){"info prefix:", " info suffix",
+                                        __FILE__, __FUNCTION__, EINA_LOG_LEVEL_INFO,
+                                        domain, __LINE__};
+   eina_log_print_cb_set(_log_test, &ctx);
+   f = eina_future_chain(_int_future_get(),
+                         eina_future_cb_log_from_desc(ctx.dbg),
+                         eina_future_cb_log_from_desc(ctx.crit),
+                         eina_future_cb_log_from_desc(ctx.warn),
+                         eina_future_cb_log_from_desc(ctx.err),
+                         eina_future_cb_log_from_desc(ctx.info),
+                         { _log_quit });
+   fail_if(!f);
+   ecore_main_loop_begin();
+   eina_log_domain_unregister(domain);
+   ecore_shutdown();
+   fail_if(!ctx.dbg_log_ok);
+   fail_if(!ctx.crit_log_ok);
+   fail_if(!ctx.warn_log_ok);
+   fail_if(!ctx.err_log_ok);
+   fail_if(!ctx.info_log_ok);
+}
+END_TEST
+
 void ecore_test_ecore_promise2(TCase *tc)
 {
    tcase_add_test(tc, efl_test_promise_future_success);
@@ -870,6 +998,7 @@ void ecore_test_ecore_promise2(TCase *tc)
    tcase_add_test(tc, efl_test_promise_future_all);
    tcase_add_test(tc, efl_test_promise_future_race);
    tcase_add_test(tc, efl_test_promise_future_ignore_error);
+   tcase_add_test(tc, efl_test_promise_log);
    //FIXME: We should move this to EO tests, however they depend on Ecore...
    tcase_add_test(tc, efl_test_promise_eo);
    tcase_add_test(tc, efl_test_promise_eo_link);
