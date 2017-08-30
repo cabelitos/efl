@@ -58,6 +58,66 @@ typedef struct _Race_Future_Ctx {
    int value;
 } Race_Future_Ctx;
 
+#ifdef EINA_SAFETY_CHECKS
+
+#define LOG_CTX_MULTIPLE_FUNC_CTX_SET(_ctx, ...)                        \
+  do {                                                                  \
+     _ctx.level = EINA_LOG_LEVEL_ERR;                                   \
+     _ctx.did = EINA_FALSE;                                             \
+     _ctx.just_fmt = EINA_FALSE;                                        \
+     _ctx.func_ctx_idx = 0;                                             \
+     _ctx.func_ctx = (struct Func_Ctx []){ __VA_ARGS__, {NULL, NULL}};  \
+  } while(0)
+
+#define LOG_CTX_SET(_ctx, _fnc, _msg) LOG_CTX_MULTIPLE_FUNC_CTX_SET(_ctx, {_fnc, _msg})
+
+typedef struct _Log_Ctx {
+   struct Func_Ctx {
+      const char *fnc;
+      const char *msg;
+   } *func_ctx;
+   int level;
+   int func_ctx_idx;
+   Eina_Bool did;
+   Eina_Bool just_fmt;
+} Log_Ctx;
+
+static void
+_eina_test_safety_print_cb(const Eina_Log_Domain *d,
+                           Eina_Log_Level level,
+                           const char *file,
+                           const char *fnc, int line,
+                           const char *fmt,
+                           void *data,
+                           va_list args)
+{
+   Log_Ctx *ctx = data;
+   va_list cp_args;
+   const char *str;
+
+   va_copy(cp_args, args);
+   str = va_arg(cp_args, const char *);
+   va_end(cp_args);
+
+   ck_assert_ptr_nonnull(ctx->func_ctx[ctx->func_ctx_idx].msg);
+   ck_assert_int_eq(level, ctx->level);
+   if (ctx->just_fmt)
+     ck_assert_str_eq(fmt, ctx->func_ctx[ctx->func_ctx_idx].msg);
+   else
+     {
+        ck_assert_str_eq(fmt, "%s");
+        ck_assert_str_eq(ctx->func_ctx[ctx->func_ctx_idx].msg, str);
+     }
+   ck_assert_str_eq(ctx->func_ctx[ctx->func_ctx_idx].fnc, fnc);
+   ctx->did = EINA_TRUE;
+   ctx->func_ctx_idx++;
+
+   (void)d;
+   (void)file;
+   (void)line;
+}
+#endif
+
 static void
 _cancel(void *data, const Eina_Promise *dead_ptr EINA_UNUSED)
 {
@@ -925,6 +985,7 @@ _log_test(const Eina_Log_Domain *d,
    ck_assert_str_eq(file, desc->file);
    ck_assert_str_eq(fmt, "%s%s%s");
    ck_assert_int_eq(desc->line, line);
+   //FIXME: REmove this check
    ck_assert_int_eq(desc->level, level);
    va_copy(cpy, args);
    prefix = va_arg(cpy, const char *);
@@ -983,6 +1044,218 @@ START_TEST(efl_test_promise_log)
 }
 END_TEST
 
+#ifdef EINA_SAFETY_CHECKS
+
+static void
+_dummy_cancel(void *data EINA_UNUSED, const Eina_Promise *dead EINA_UNUSED)
+{
+}
+
+START_TEST(efl_test_promise_null)
+{
+   Log_Ctx ctx = { 0 };
+   Eina_Promise *p;
+
+   fail_if(!ecore_init());
+
+   eina_log_print_cb_set(_eina_test_safety_print_cb, &ctx);
+   LOG_CTX_SET(ctx, "eina_promise_new", "safety check failed: scheduler == NULL");
+   p = eina_promise_new(NULL, _dummy_cancel, NULL);
+   ck_assert_ptr_null(p);
+   fail_unless(ctx.did);
+
+   LOG_CTX_SET(ctx, "eina_promise_new", "safety check failed: cancel_cb == NULL");
+   p = eina_promise_new(_future_scheduler_get(), NULL, NULL);
+   ck_assert_ptr_null(p);
+   fail_unless(ctx.did);
+
+   ecore_shutdown();
+}
+END_TEST
+
+START_TEST(efl_test_promise_reject_resolve_null)
+{
+   Log_Ctx ctx = { 0 };
+   Eina_Value v;
+
+   fail_if(!ecore_init());
+
+   LOG_CTX_SET(ctx, "eina_promise_resolve", "safety check failed: (p) == NULL");
+   eina_log_print_cb_set(_eina_test_safety_print_cb, &ctx);
+   eina_value_setup(&v, EINA_VALUE_TYPE_INT);
+   VALUE_TYPE_CHECK(v, EINA_VALUE_TYPE_INT);
+   eina_promise_resolve(NULL, v);
+   fail_unless(ctx.did);
+
+   LOG_CTX_SET(ctx, "eina_promise_reject", "safety check failed: (p) == NULL");
+   eina_promise_reject(NULL, DEFAULT_ERROR);
+   fail_unless(ctx.did);
+   ecore_shutdown();
+}
+END_TEST
+
+static Eina_Value
+_future_null_cb(void *data, const Eina_Value v, const Eina_Future *dead)
+{
+   int err;
+   int *cb_called = data;
+
+   ck_assert_ptr_null(dead);
+   VALUE_TYPE_CHECK(v, EINA_VALUE_TYPE_ERROR);
+   fail_if(!eina_value_get(&v, &err));
+   ck_assert_int_eq(err, EINVAL);
+   (*cb_called)++;
+   return v;
+}
+
+static Eina_Value
+_future_easy_null_success(void *data EINA_UNUSED, const Eina_Value v)
+{
+   //Should not happen
+   fail_if(EINA_TRUE);
+   return v;
+}
+
+static Eina_Value
+_future_easy_null_err(void *data, Eina_Error err)
+{
+   int *cb_called = data;
+   ck_assert_int_eq(err, EINVAL);
+   (*cb_called)++;
+   return eina_value_error_init(err);
+}
+
+static void
+_future_easy_null_free(void *data, const Eina_Future *dead)
+{
+   int *cb_called = data;
+   ck_assert_ptr_null(dead);
+   (*cb_called)++;
+}
+
+START_TEST(efl_test_future_null)
+{
+   Eina_Future *f;
+   Log_Ctx ctx = { 0 };
+   int cb_called = 0;
+   int easy_cb_calls = 0;
+
+   fail_if(!ecore_init());
+
+   LOG_CTX_SET(ctx, "eina_future_then_from_desc", "safety check failed: (prev) == NULL");
+   eina_log_print_cb_set(_eina_test_safety_print_cb, &ctx);
+   f = eina_future_then(NULL, _future_null_cb, &cb_called);
+   ck_assert_ptr_null(f);
+
+   ck_assert_int_eq(cb_called, 1);
+
+   cb_called = 0;
+   LOG_CTX_SET(ctx, "eina_future_chain_array", "safety check failed: (prev) == NULL");
+   f = eina_future_chain(NULL,
+                         eina_future_cb_easy(_future_easy_null_success,
+                                             _future_easy_null_err,
+                                             _future_easy_null_free,
+                                             NULL, &easy_cb_calls),
+                         {_future_null_cb, &cb_called},
+                         {_future_null_cb, &cb_called},
+                         {_future_null_cb, &cb_called},
+                         {_future_null_cb, &cb_called},
+                         {_future_null_cb, &cb_called});
+   ck_assert_ptr_null(f);
+   ck_assert_int_eq(cb_called, 5);
+   ck_assert_int_eq(easy_cb_calls, 2);
+
+   easy_cb_calls = 0;
+   LOG_CTX_SET(ctx, "eina_future_chain_easy_array", "safety check failed: (prev) == NULL");
+   f = eina_future_chain_easy(NULL,
+                              {_future_easy_null_success,
+                                   _future_easy_null_err,
+                                   _future_easy_null_free,
+                                   NULL, &easy_cb_calls});
+   ck_assert_ptr_null(f);
+   ck_assert_int_eq(easy_cb_calls, 2);
+   ecore_shutdown();
+}
+END_TEST
+
+static Eina_Value
+_future_race_all_null_cb(void *data, const Eina_Value v, const Eina_Future *dead EINA_UNUSED)
+{
+   int err;
+   int *cb_called = data;
+
+   VALUE_TYPE_CHECK(v, EINA_VALUE_TYPE_ERROR);
+   fail_if(!eina_value_get(&v, &err));
+   ck_assert_int_eq(err, ENOMEM);
+   (*cb_called)++;
+   return v;
+}
+
+START_TEST(efl_test_future_all_null)
+{
+   Log_Ctx ctx = { 0 };
+   unsigned i, len;
+   int cb_called = 0;
+   Eina_Future *futures[11] = { 0 }, *f;
+
+   fail_if(!ecore_init());
+
+   eina_log_print_cb_set(_eina_test_safety_print_cb, &ctx);
+
+   len = EINA_C_ARRAY_LENGTH(futures);
+   len--;
+   for (i = 0; i < len; i++)
+     {
+        futures[i] = eina_future_then(_int_future_get(),
+                                      _future_race_all_null_cb, &cb_called);
+        fail_if(!futures[i]);
+     }
+
+   LOG_CTX_MULTIPLE_FUNC_CTX_SET(ctx,
+                                 {"promise_proxy_of_future_array_create", "safety check failed: array[i] == NULL"},
+                                 {"eina_promise_all_array", "safety check failed: r is false"});
+   //The last future is NULL, which may cause the cancel.
+   f = eina_future_all_array(futures);
+   ck_assert_ptr_null(f);
+   ecore_shutdown();
+   ck_assert_int_eq(cb_called, len);
+}
+END_TEST
+
+START_TEST(efl_test_future_race_null)
+{
+   Log_Ctx ctx = { 0 };
+   unsigned i, len;
+   int cb_called = 0;
+   Eina_Future *futures[11] = { 0 }, *f;
+
+   fail_if(!ecore_init());
+
+   eina_log_print_cb_set(_eina_test_safety_print_cb, &ctx);
+
+   len = EINA_C_ARRAY_LENGTH(futures);
+   len--;
+   for (i = 0; i < len; i++)
+     {
+        futures[i] = eina_future_then(_int_future_get(),
+                                      _future_race_all_null_cb, &cb_called);
+        fail_if(!futures[i]);
+     }
+
+   LOG_CTX_MULTIPLE_FUNC_CTX_SET(ctx,
+                                 {"promise_proxy_of_future_array_create", "safety check failed: array[i] == NULL"},
+                                 {"eina_promise_race_array", "safety check failed: r is false"});
+   //The last future is NULL, which may cause the cancel.
+   f = eina_future_race_array(futures);
+   ck_assert_ptr_null(f);
+   ecore_shutdown();
+   ck_assert_int_eq(cb_called, len);
+}
+END_TEST
+
+#endif
+
+
 void ecore_test_ecore_promise2(TCase *tc)
 {
    tcase_add_test(tc, efl_test_promise_future_success);
@@ -1002,4 +1275,12 @@ void ecore_test_ecore_promise2(TCase *tc)
    //FIXME: We should move this to EO tests, however they depend on Ecore...
    tcase_add_test(tc, efl_test_promise_eo);
    tcase_add_test(tc, efl_test_promise_eo_link);
+
+#ifdef EINA_SAFETY_CHECKS
+   tcase_add_test(tc, efl_test_promise_null);
+   tcase_add_test(tc, efl_test_promise_reject_resolve_null);
+   tcase_add_test(tc, efl_test_future_null);
+   tcase_add_test(tc, efl_test_future_all_null);
+   tcase_add_test(tc, efl_test_future_race_null);
+#endif
 }
